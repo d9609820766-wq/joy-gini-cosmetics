@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Product Management - Joy Gini Admin</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #4a0e0e 0%, #7a1f1f 50%, #4a0e0e 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .header {
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; padding: 20px 0; border-bottom: 2px solid gold;
+            margin-bottom: 30px;
+        }
+        .header h1 { color: gold; }
+        .header-right {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        .btn-gold {
+            background: gold; color: #4a0e0e; padding: 10px 20px;
+            border-radius: 30px; text-decoration: none; font-weight: bold;
+            border: none; cursor: pointer;
+            font-size: 1rem;
+        }
+        .btn-dashboard {
+            background: #6c757d; color: white; padding: 10px 20px;
+            border-radius: 30px; text-decoration: none;
+            font-weight: bold;
+        }
+        .search-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            background: rgba(0,0,0,0.4);
+            padding: 15px;
+            border-radius: 50px;
+        }
+        .search-fields {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            flex: 2;
+        }
+        .search-fields input, .search-fields select {
+            background: #2c0a0a;
+            border: 1px solid gold;
+            border-radius: 40px;
+            padding: 8px 15px;
+            color: white;
+            width: 180px;
+        }
+        .search-fields select option { background: #2c0a0a; }
+        .btn-excel {
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            padding: 8px 20px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            background: rgba(0,0,0,0.6);
+            border-collapse: collapse;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid gold;
+        }
+        th { background: rgba(0,0,0,0.8); color: gold; }
+        .product-img {
+            width: 50px; height: 50px; object-fit: cover;
+            border-radius: 8px; border: 1px solid gold;
+        }
+        .action-buttons button {
+            margin: 0 3px; padding: 5px 10px;
+            border-radius: 20px; border: none;
+            cursor: pointer;
+        }
+        .edit-btn { background: #17a2b8; color: white; }
+        .delete-btn { background: #dc3545; color: white; }
+        .preview-btn { background: #6c757d; color: white; }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: rgba(30,10,10,0.98);
+            border: 2px solid gold;
+            border-radius: 25px;
+            width: 90%;
+            max-width: 650px;
+            padding: 25px;
+            color: white;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-content h2 { color: gold; margin-bottom: 20px; }
+        .modal-content input, .modal-content textarea, .modal-content select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 12px;
+            background: #2c0a0a;
+            border: 1px solid gold;
+            color: white;
+            border-radius: 8px;
+        }
+        .close {
+            float: right;
+            font-size: 28px;
+            cursor: pointer;
+            color: gold;
+        }
+        .preview-img { max-width: 100%; border-radius: 15px; margin-bottom: 15px; }
+        .scan-btn {
+            background: #28a745;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 30px;
+            margin-top: 5px;
+            margin-bottom: 10px;
+            border: none;
+            cursor: pointer;
+        }
+        #qr-reader {
+            margin-top: 15px;
+            width: 100%;
+            border: 1px solid gold;
+            border-radius: 15px;
+            background: #000;
+            display: none;
+        }
+        @media (max-width: 768px) {
+            .search-bar { flex-direction: column; align-items: stretch; border-radius: 20px; }
+            .search-fields input, .search-fields select { width: 100%; }
+            table, thead, tbody, th, td, tr { display: block; }
+            th { display: none; }
+            tr { margin-bottom: 15px; border: 1px solid gold; border-radius: 10px; }
+            td { display: flex; justify-content: space-between; align-items: center; padding: 8px; }
+            td::before { content: attr(data-label); font-weight: bold; color: gold; width: 40%; }
+        }
+    </style>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1><i class="fas fa-boxes"></i> Product Management</h1>
+        <div class="header-right">
+            <a href="/admin/dashboard" class="btn-dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <button class="btn-gold" onclick="openAddModal()"><i class="fas fa-plus"></i> Add Product</button>
+        </div>
+    </div>
+
+    <!-- Search & Export Section -->
+    <div class="search-bar">
+        <div class="search-fields">
+            <input type="text" id="searchTitle" placeholder="🔍 Product Name">
+            <select id="searchCategory">
+                <option value="">All Categories</option>
+                <optgroup label="💄 Cosmetics">
+                    <option value="Lipstick">Lipstick</option>
+                    <option value="Foundation">Foundation</option>
+                    <option value="Kajal">Kajal / Eyeliner</option>
+                    <option value="Lip Gloss">Lip Gloss</option>
+                    <option value="Mascara">Mascara</option>
+                    <option value="Compact Powder">Compact Powder</option>
+                    <option value="Nail Polish">Nail Polish</option>
+                    <option value="Face Cream">Face Cream / Moisturizer</option>
+                    <option value="Sunscreen">Sunscreen</option>
+                    <option value="Face Wash">Face Wash / Cleanser</option>
+                    <option value="Serum">Serum</option>
+                    <option value="Toner">Toner</option>
+                    <option value="Face Mask">Face Mask / Scrub</option>
+                    <option value="Eye Cream">Eye Cream</option>
+                    <option value="Lip Balm">Lip Balm</option>
+                    <option value="Makeup Remover">Makeup Remover</option>
+                    <option value="Primer">Primer</option>
+                    <option value="Concealer">Concealer</option>
+                    <option value="Highlighter">Highlighter / Blush</option>
+                    <option value="Perfume">Perfume / Deodorant</option>
+                </optgroup>
+                <optgroup label="💍 Jewelry">
+                    <option value="Necklace">Necklace</option>
+                    <option value="Ring">Ring</option>
+                    <option value="Bracelet">Bracelet</option>
+                    <option value="Earrings">Earrings</option>
+                    <option value="Pendant">Pendant</option>
+                    <option value="Chain">Chain</option>
+                    <option value="Anklet">Anklet</option>
+                    <option value="Nose Pin">Nose Pin</option>
+                    <option value="Toe Ring">Toe Ring</option>
+                    <option value="Hair Accessories">Hair Accessories</option>
+                    <option value="Brooch">Brooch / Pin</option>
+                    <option value="Cufflinks">Cufflinks</option>
+                    <option value="Jewelry Set">Jewelry Set</option>
+                </optgroup>
+                <optgroup label="🧴 Personal Care">
+                    <option value="Hair Care">Hair Care (Shampoo, Oil, Serum)</option>
+                    <option value="Body Lotion">Body Lotion / Cream</option>
+                    <option value="Hand Cream">Hand Cream</option>
+                    <option value="Foot Cream">Foot Cream</option>
+                    <option value="Men's Grooming">Men's Grooming</option>
+                    <option value="Baby Care">Baby Care</option>
+                    <option value="Beauty Tools">Beauty Tools (Brushes, Sponges)</option>
+                </optgroup>
+                <option value="Gift Set">🎁 Gift Set / Combo</option>
+                <option value="Other">📦 Other</option>
+            </select>
+            <input type="text" id="searchBarcode" placeholder="🔍 Barcode">
+        </div>
+        <button class="btn-excel" onclick="exportToCSV()"><i class="fas fa-file-excel"></i> Export CSV</button>
+    </div>
+
+    <div style="overflow-x: auto;">
+        <table id="productTable">
+            <thead><tr><th>Image</th><th>Title</th><th>Category</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead>
+            <tbody id="productTableBody">
+                {% for product in products %}
+                <tr data-id="{{ product.id }}">
+                    <td data-label="Image" class="product-img-cell">
+                        {% if product.image_filename %}
+                            <img class="product-img" src="{{ url_for('static', filename='uploads/products/' + product.image_filename) }}">
+                        {% else %}
+                            <i class="fas fa-image"></i>
+                        {% endif %}
+                    </td>
+                    <td data-label="Title" class="product-title-cell">{{ product.title }}</td>
+                    <td data-label="Category" class="product-category-cell">{{ product.category or 'N/A' }}</td>
+                    <td data-label="Price" class="product-price-cell">₹ {{ "%.2f"|format(product.price) }}</td>
+                    <td data-label="Stock" class="product-stock-cell">{{ product.stock_quantity }}</td>
+                    <td data-label="Actions" class="action-buttons">
+                        <button class="preview-btn" onclick="previewProduct({{ product.id }})"><i class="fas fa-eye"></i> Preview</button>
+                        <button class="edit-btn" onclick="editProduct({{ product.id }})"><i class="fas fa-edit"></i> Edit</button>
+                        <button class="delete-btn" onclick="deleteProduct({{ product.id }})"><i class="fas fa-trash"></i> Delete</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal for Add/Edit Form -->
+<div id="formModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('formModal')">&times;</span>
+        <h2 id="modalTitle">Add Product</h2>
+        <form id="productForm">
+            <input type="hidden" id="productId" name="id">
+            <label>Title *</label>
+            <input type="text" id="title" name="title" required>
+            <label>Category</label>
+            <select id="category" name="category">
+                <option value="">-- Select Category --</option>
+                <optgroup label="💄 Cosmetics">
+                    <option value="Lipstick">Lipstick</option>
+                    <option value="Foundation">Foundation</option>
+                    <option value="Kajal">Kajal / Eyeliner</option>
+                    <option value="Lip Gloss">Lip Gloss</option>
+                    <option value="Mascara">Mascara</option>
+                    <option value="Compact Powder">Compact Powder</option>
+                    <option value="Nail Polish">Nail Polish</option>
+                    <option value="Face Cream">Face Cream / Moisturizer</option>
+                    <option value="Sunscreen">Sunscreen</option>
+                    <option value="Face Wash">Face Wash / Cleanser</option>
+                    <option value="Serum">Serum</option>
+                    <option value="Toner">Toner</option>
+                    <option value="Face Mask">Face Mask / Scrub</option>
+                    <option value="Eye Cream">Eye Cream</option>
+                    <option value="Lip Balm">Lip Balm</option>
+                    <option value="Makeup Remover">Makeup Remover</option>
+                    <option value="Primer">Primer</option>
+                    <option value="Concealer">Concealer</option>
+                    <option value="Highlighter">Highlighter / Blush</option>
+                    <option value="Perfume">Perfume / Deodorant</option>
+                </optgroup>
+                <optgroup label="💍 Jewelry">
+                    <option value="Necklace">Necklace</option>
+                    <option value="Ring">Ring</option>
+                    <option value="Bracelet">Bracelet</option>
+                    <option value="Earrings">Earrings</option>
+                    <option value="Pendant">Pendant</option>
+                    <option value="Chain">Chain</option>
+                    <option value="Anklet">Anklet</option>
+                    <option value="Nose Pin">Nose Pin</option>
+                    <option value="Toe Ring">Toe Ring</option>
+                    <option value="Hair Accessories">Hair Accessories</option>
+                    <option value="Brooch">Brooch / Pin</option>
+                    <option value="Cufflinks">Cufflinks</option>
+                    <option value="Jewelry Set">Jewelry Set</option>
+                </optgroup>
+                <optgroup label="🧴 Personal Care">
+                    <option value="Hair Care">Hair Care (Shampoo, Oil, Serum)</option>
+                    <option value="Body Lotion">Body Lotion / Cream</option>
+                    <option value="Hand Cream">Hand Cream</option>
+                    <option value="Foot Cream">Foot Cream</option>
+                    <option value="Men's Grooming">Men's Grooming</option>
+                    <option value="Baby Care">Baby Care</option>
+                    <option value="Beauty Tools">Beauty Tools (Brushes, Sponges)</option>
+                </optgroup>
+                <option value="Gift Set">🎁 Gift Set / Combo</option>
+                <option value="Other">📦 Other</option>
+            </select>
+            <label>Description</label>
+            <textarea id="description" name="description" rows="3"></textarea>
+            <label>Price (₹) *</label>
+            <input type="number" step="0.01" id="price" name="price" required>
+            <label>Stock *</label>
+            <input type="number" id="stock" name="stock" required>
+            <label>Barcode</label>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <input type="text" id="barcode" name="barcode" style="flex:1;" placeholder="Scan or type">
+                <button type="button" class="scan-btn" onclick="startBarcodeScan()"><i class="fas fa-camera"></i> Scan</button>
+            </div>
+            <div id="qr-reader"></div>
+            <label>Product Image</label>
+            <div id="currentImagePreview" style="margin:10px 0;"></div>
+            <input type="file" id="image" name="image" accept="image/*">
+            <button type="submit" class="btn-gold" style="width:100%; margin-top:15px;">Save Product</button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal for Preview -->
+<div id="previewModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('previewModal')">&times;</span>
+        <div id="previewContent"></div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
+<script>
+    let html5QrCode = null;
+    let scanActive = false;
+
+    function filterProducts() {
+        const titleFilter = document.getElementById('searchTitle').value.toLowerCase();
+        const categoryFilter = document.getElementById('searchCategory').value;
+        const rows = document.querySelectorAll('#productTableBody tr');
+        rows.forEach(row => {
+            const title = row.querySelector('.product-title-cell')?.innerText.toLowerCase() || '';
+            const category = row.querySelector('.product-category-cell')?.innerText.toLowerCase() || '';
+            let show = true;
+            if (titleFilter && !title.includes(titleFilter)) show = false;
+            if (categoryFilter && category !== categoryFilter.toLowerCase()) show = false;
+            row.style.display = show ? '' : 'none';
+        });
+    }
+
+    document.getElementById('searchTitle').addEventListener('keyup', filterProducts);
+    document.getElementById('searchCategory').addEventListener('change', filterProducts);
+
+    function exportToCSV() {
+        const rows = Array.from(document.querySelectorAll('#productTableBody tr')).filter(row => row.style.display !== 'none');
+        if (rows.length === 0) { alert('No products to export.'); return; }
+        const headers = ['Title', 'Category', 'Price (₹)', 'Stock'];
+        const data = rows.map(row => [
+            row.querySelector('.product-title-cell')?.innerText.trim() || '',
+            row.querySelector('.product-category-cell')?.innerText.trim() || '',
+            (row.querySelector('.product-price-cell')?.innerText.trim().replace('₹', '') || ''),
+            row.querySelector('.product-stock-cell')?.innerText.trim() || ''
+        ]);
+        let csvContent = headers.join(',') + '\n';
+        data.forEach(row => csvContent += row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(',') + '\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `products_${new Date().toISOString().slice(0,19)}.csv`;
+        link.click();
+        URL.revokeObjectURL(link.href);
+    }
+
+    function openAddModal() {
+        document.getElementById('modalTitle').innerText = 'Add Product';
+        document.getElementById('productForm').reset();
+        document.getElementById('productId').value = '';
+        document.getElementById('currentImagePreview').innerHTML = '';
+        document.getElementById('formModal').style.display = 'flex';
+        stopScanner();
+    }
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+        stopScanner();
+    }
+    function stopScanner() {
+        if (html5QrCode && scanActive) {
+            html5QrCode.stop().then(() => {
+                document.getElementById('qr-reader').style.display = 'none';
+                scanActive = false;
+            }).catch(() => {});
+        }
+    }
+    function startBarcodeScan() {
+        const readerDiv = document.getElementById('qr-reader');
+        readerDiv.style.display = 'block';
+        if (html5QrCode) html5QrCode.stop().then(() => startScannerInstance()).catch(() => startScannerInstance());
+        else startScannerInstance();
+    }
+    function startScannerInstance() {
+        html5QrCode = new Html5Qrcode("qr-reader");
+        html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } }, 
+            (decodedText) => { document.getElementById('barcode').value = decodedText; stopScanner(); }, 
+            () => {});
+        scanActive = true;
+    }
+    function editProduct(id) {
+        fetch(`/admin/product/data/${id}`).then(res => res.json()).then(data => {
+            document.getElementById('modalTitle').innerText = 'Edit Product';
+            document.getElementById('productId').value = data.id;
+            document.getElementById('title').value = data.title;
+            document.getElementById('category').value = data.category || '';
+            document.getElementById('description').value = data.description || '';
+            document.getElementById('price').value = data.price;
+            document.getElementById('stock').value = data.stock_quantity;
+            document.getElementById('barcode').value = data.barcode_data || '';
+            document.getElementById('currentImagePreview').innerHTML = data.image_filename ? `<img src="/static/uploads/products/${data.image_filename}" style="max-width:100px; border-radius:8px;"><br>` : '';
+            document.getElementById('formModal').style.display = 'flex';
+            stopScanner();
+        });
+    }
+    function previewProduct(id) {
+        fetch(`/admin/product/data/${id}`).then(res => res.json()).then(data => {
+            document.getElementById('previewContent').innerHTML = `
+                <h2 style="color:gold;">${data.title}</h2>
+                <img class="preview-img" src="${data.image_filename ? '/static/uploads/products/' + data.image_filename : 'https://via.placeholder.com/300'}">
+                <p><strong>Category:</strong> ${data.category || 'N/A'}</p>
+                <p><strong>Description:</strong> ${data.description || 'No description'}</p>
+                <p><strong>Price:</strong> ₹ ${parseFloat(data.price).toFixed(2)}</p>
+                <p><strong>Stock:</strong> ${data.stock_quantity}</p>
+                <p><strong>Barcode:</strong> ${data.barcode_data || 'N/A'}</p>`;
+            document.getElementById('previewModal').style.display = 'flex';
+        });
+    }
+    function deleteProduct(id) {
+        if(confirm('Delete this product?')) fetch(`/admin/product/delete/${id}`, { method: 'POST' }).then(res => res.json()).then(data => data.success ? location.reload() : alert('Delete failed'));
+    }
+    document.getElementById('productForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        let formData = new FormData(this);
+        let id = document.getElementById('productId').value;
+        fetch(id ? `/admin/product/edit/${id}` : '/admin/product/add', { method: 'POST', body: formData })
+            .then(res => res.json()).then(data => data.success ? location.reload() : alert('Error saving'));
+    });
+    window.onclick = e => { if (e.target.classList.contains('modal')) closeModal(e.target.id); }
+</script>
+</body>
+</html>

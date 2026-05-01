@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>{{ settings.get('store_name', 'Joy Gini Cosmetics') }} - Official Store</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #4a0e0e 0%, #7a1f1f 50%, #4a0e0e 100%);
+            font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        
+        /* ========== HEADER ========== */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            padding: 15px 0;
+            border-bottom: 2px solid gold;
+            margin-bottom: 20px;
+        }
+        .logo-area { display: flex; align-items: center; gap: 12px; }
+        .logo-img { max-height: 50px; width: auto; }
+        .store-name { font-size: 1.4rem; font-weight: bold; color: gold; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
+        .store-info { text-align: right; font-size: 0.75rem; }
+        .store-info div { margin-bottom: 3px; }
+        .social-icons a { color: gold; margin-left: 10px; font-size: 1.2rem; text-decoration: none; }
+        .social-icons a:hover { color: #ffd700; }
+        
+        /* ========== SMALL BANNER (Flipkart style) ========== */
+        .slider {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            border: 1px solid gold;
+            background: #2c0a0a;
+        }
+        .slides { display: flex; transition: transform 0.5s ease-in-out; }
+        .slide { min-width: 100%; }
+        .slide img { width: 100%; height: auto; max-height: 180px; object-fit: cover; display: block; }
+        .slider-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0,0,0,0.6);
+            color: gold;
+            border: none;
+            padding: 5px 12px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            border-radius: 50%;
+        }
+        .prev { left: 8px; }
+        .next { right: 8px; }
+        
+        /* ========== SEARCH & FILTER BAR ========== */
+        .filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            background: rgba(0,0,0,0.5);
+            padding: 10px 18px;
+            border-radius: 50px;
+        }
+        .search-box {
+            flex: 2;
+            min-width: 180px;
+        }
+        .search-box input {
+            width: 100%;
+            background: #2c0a0a;
+            border: 1px solid gold;
+            border-radius: 40px;
+            padding: 8px 15px;
+            color: white;
+            font-size: 0.85rem;
+        }
+        .filter-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .filter-group select, .price-range input {
+            background: #2c0a0a;
+            border: 1px solid gold;
+            border-radius: 30px;
+            padding: 6px 12px;
+            color: white;
+            font-size: 0.8rem;
+        }
+        .price-range { display: flex; gap: 5px; align-items: center; }
+        .price-range input { width: 80px; }
+        
+        /* ========== VIEW TOGGLE ========== */
+        .view-toggle { display: flex; gap: 8px; }
+        .view-toggle button {
+            background: #2c0a0a;
+            border: 1px solid gold;
+            border-radius: 30px;
+            padding: 5px 12px;
+            cursor: pointer;
+            color: white;
+        }
+        .view-toggle button.active { background: gold; color: #4a0e0e; }
+        
+        /* ========== PRODUCTS GRID (3 per row desktop, 2 mobile) ========== */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+            gap: 18px;
+            margin-top: 15px;
+        }
+        .products-grid.list-view {
+            display: flex;
+            flex-direction: column;
+        }
+        .products-grid.list-view .product-card {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 15px;
+            padding: 10px;
+        }
+        .products-grid.list-view .product-img {
+            width: 80px;
+            height: 80px;
+        }
+        
+        /* Product Card */
+        .product-card {
+            background: rgba(0,0,0,0.55);
+            backdrop-filter: blur(5px);
+            border-radius: 12px;
+            border: 1px solid gold;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+            text-decoration: none;
+            color: white;
+            display: block;
+            position: relative;
+        }
+        .product-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(255,215,0,0.25);
+        }
+        .product-img {
+            width: 100%;
+            height: 170px;
+            object-fit: cover;
+            border-bottom: 1px solid gold;
+        }
+        .product-info {
+            padding: 10px;
+        }
+        .product-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: gold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .product-price {
+            font-size: 1rem;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+        .stock-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.65rem;
+            background: #28a745;
+        }
+        .outofstock { background: #dc3545; }
+        .rating-stars {
+            margin: 5px 0;
+            font-size: 0.7rem;
+            color: gold;
+        }
+        .whatsapp-btn {
+            display: inline-block;
+            background: #25D366;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-size: 0.65rem;
+            text-decoration: none;
+            margin-top: 5px;
+        }
+        .quick-view {
+            position: absolute;
+            bottom: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: gold;
+            color: #4a0e0e;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            opacity: 0;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+        .product-card:hover .quick-view { opacity: 1; }
+        
+        /* Skeleton Loading */
+        .skeleton {
+            background: rgba(255,255,255,0.08);
+            border-radius: 12px;
+            height: 250px;
+            animation: pulse 1.2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 0.4; }
+            50% { opacity: 0.8; }
+            100% { opacity: 0.4; }
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: #2c0a0a;
+            border: 2px solid gold;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 450px;
+            padding: 20px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-content h3 { color: gold; margin-bottom: 10px; }
+        .modal-content img { width: 100%; border-radius: 10px; margin-bottom: 10px; }
+        .close {
+            float: right;
+            font-size: 24px;
+            cursor: pointer;
+            color: gold;
+        }
+        .btn-gold {
+            background: gold;
+            color: #4a0e0e;
+            padding: 8px 15px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: bold;
+            display: inline-block;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px 0;
+            margin-top: 30px;
+            border-top: 1px solid gold;
+            font-size: 0.7rem;
+        }
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+        .footer-links a { color: gold; text-decoration: none; font-size: 0.7rem; }
+        
+        @media (max-width: 768px) {
+            .filter-bar { flex-direction: column; align-items: stretch; border-radius: 20px; }
+            .products-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+            .product-img { height: 140px; }
+            .product-title { font-size: 0.8rem; }
+        }
+        @media (min-width: 992px) {
+            .products-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+<div class="container">
+    <!-- ========== HEADER ========== -->
+    <div class="header">
+        <div class="logo-area">
+            {% if settings.get('logo_filename') %}
+                <img class="logo-img" src="{{ url_for('static', filename='uploads/logo/' + settings['logo_filename']) }}" alt="Logo">
+            {% endif %}
+            <div class="store-name">{{ settings.get('store_name', 'Joy Gini Cosmetics') }}</div>
+        </div>
+        <div class="store-info">
+            <div><i class="fas fa-map-marker-alt"></i> {{ settings.get('store_address', 'Champahati, Kolkata') }}</div>
+            <div><i class="fas fa-phone"></i> {{ settings.get('store_phone', '+91 9876543210') }}</div>
+            <div class="social-icons">
+                {% if settings.get('facebook_url') %}<a href="{{ settings['facebook_url'] }}" target="_blank"><i class="fab fa-facebook"></i></a>{% endif %}
+                {% if settings.get('instagram_url') %}<a href="{{ settings['instagram_url'] }}" target="_blank"><i class="fab fa-instagram"></i></a>{% endif %}
+                {% if settings.get('twitter_url') %}<a href="{{ settings['twitter_url'] }}" target="_blank"><i class="fab fa-twitter"></i></a>{% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== SMALL SLIDING BANNER ========== -->
+    {% if banners %}
+    <div class="slider">
+        <div class="slides" id="slides">
+            {% for banner in banners %}
+            <div class="slide">
+                {% if banner.link_url %}<a href="{{ banner.link_url }}" target="_blank">{% endif %}
+                <img src="{{ url_for('static', filename='uploads/banners/' + banner.image_filename) }}" alt="Banner">
+                {% if banner.link_url %}</a>{% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <button class="slider-btn prev" onclick="changeSlide(-1)">❮</button>
+        <button class="slider-btn next" onclick="changeSlide(1)">❯</button>
+    </div>
+    {% endif %}
+
+    <!-- ========== SEARCH & FILTER ========== -->
+    <div class="filter-bar">
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="🔍 Search products...">
+        </div>
+        <div class="filter-group">
+            <select id="categoryFilter">
+                <option value="all">All Categories</option>
+                {% for cat in categories %}
+                    <option value="{{ cat }}">{{ cat }}</option>
+                {% endfor %}
+            </select>
+            <div class="price-range">
+                <input type="number" id="minPrice" placeholder="Min ₹" value="0">
+                <span>-</span>
+                <input type="number" id="maxPrice" placeholder="Max ₹" value="50000">
+            </div>
+            <select id="ratingFilter">
+                <option value="0">All Ratings</option>
+                <option value="4">4★ & above</option>
+                <option value="3">3★ & above</option>
+            </select>
+        </div>
+        <div class="view-toggle">
+            <button id="gridView" class="active"><i class="fas fa-th"></i></button>
+            <button id="listView"><i class="fas fa-list"></i></button>
+        </div>
+    </div>
+
+    <!-- ========== PRODUCTS GRID ========== -->
+    <div class="products-grid" id="productsGrid">
+        <!-- Skeleton Loaders -->
+        {% for i in range(6) %}
+        <div class="skeleton"></div>
+        {% endfor %}
+    </div>
+
+    <!-- ========== FOOTER ========== -->
+    <footer>
+        <div class="footer-links">
+            <a href="/">Home</a>
+            <a href="#">Products</a>
+            <a href="#">Offers</a>
+            <a href="#">Privacy Policy</a>
+            <a href="#">Terms & Conditions</a>
+        </div>
+        <div>© 2026 {{ settings.get('store_name', 'Joy Gini Cosmetics') }} - All Rights Reserved.</div>
+        <div><a href="/admin/login" style="color:gold;">Admin Login</a></div>
+    </footer>
+</div>
+
+<!-- ========== QUICK VIEW MODAL ========== -->
+<div id="quickViewModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeQuickView()">&times;</span>
+        <div id="quickViewContent"></div>
+    </div>
+</div>
+
+<script>
+    // ========== Data ==========
+    let productsData = {{ products | tojson | safe }};
+    let currentView = 'grid';
+
+    // ========== Helper: Fetch Rating ==========
+    async function fetchRatings() {
+        for (let p of productsData) {
+            try {
+                let res = await fetch(`/api/product_rating/${p.id}`);
+                let data = await res.json();
+                p.avg_rating = data.avg || 0;
+                p.rating_count = data.count || 0;
+            } catch(e) {
+                p.avg_rating = 0;
+                p.rating_count = 0;
+            }
+        }
+    }
+
+    // ========== Render Products ==========
+    async function renderProducts(products) {
+        const grid = document.getElementById('productsGrid');
+        grid.innerHTML = '';
+        if (products.length === 0) {
+            grid.innerHTML = '<div style="text-align:center; grid-column:1/-1; padding:40px;">No products found</div>';
+            return;
+        }
+        grid.className = currentView === 'grid' ? 'products-grid' : 'products-grid list-view';
+        
+        products.forEach(p => {
+            const card = document.createElement('div');
+            card.className = 'product-card';
+            const stockBadge = p.stock_quantity > 0 
+                ? `<span class="stock-badge">In Stock: ${p.stock_quantity}</span>` 
+                : `<span class="stock-badge outofstock">Out of Stock</span>`;
+            const ratingHtml = p.avg_rating > 0 
+                ? `<div class="rating-stars">${'★'.repeat(Math.floor(p.avg_rating))}${'☆'.repeat(5-Math.floor(p.avg_rating))} (${p.avg_rating.toFixed(1)})</div>` 
+                : '';
+            const whatsappShare = `https://wa.me/?text=Check out ${p.title} at ₹${p.price} - ${window.location.origin}/product/${p.id}`;
+            
+            card.innerHTML = `
+                <img class="product-img" src="${p.image_filename ? '/static/uploads/products/' + p.image_filename : 'https://via.placeholder.com/300x200'}" alt="${p.title}">
+                <div class="product-info">
+                    <div class="product-title">${escapeHtml(p.title)}</div>
+                    <div class="product-price">₹ ${parseFloat(p.price).toFixed(2)}</div>
+                    ${stockBadge}
+                    ${ratingHtml}
+                    <a href="${whatsappShare}" target="_blank" class="whatsapp-btn"><i class="fab fa-whatsapp"></i> Share</a>
+                </div>
+                <div class="quick-view" onclick="event.stopPropagation(); showQuickView(${p.id})">Quick View</div>
+            `;
+            card.onclick = () => { window.location.href = `/product/${p.id}`; };
+            grid.appendChild(card);
+        });
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // ========== Filter Products ==========
+    async function filterProducts() {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const category = document.getElementById('categoryFilter').value;
+        const minPrice = parseInt(document.getElementById('minPrice').value) || 0;
+        const maxPrice = parseInt(document.getElementById('maxPrice').value) || 50000;
+        const ratingVal = parseInt(document.getElementById('ratingFilter').value) || 0;
+        
+        let filtered = productsData.filter(p => {
+            if (searchTerm && !p.title.toLowerCase().includes(searchTerm) && !(p.description || '').toLowerCase().includes(searchTerm)) return false;
+            if (category !== 'all' && p.category !== category) return false;
+            if (p.price < minPrice || p.price > maxPrice) return false;
+            if (ratingVal > 0 && (p.avg_rating || 0) < ratingVal) return false;
+            return true;
+        });
+        await renderProducts(filtered);
+    }
+
+    // ========== Quick View ==========
+    async function showQuickView(id) {
+        const p = productsData.find(x => x.id == id);
+        if (!p) return;
+        let avgRating = p.avg_rating || 0;
+        const whatsappShare = `https://wa.me/?text=Check out ${p.title} at ₹${p.price} - ${window.location.origin}/product/${p.id}`;
+        document.getElementById('quickViewContent').innerHTML = `
+            <h3>${escapeHtml(p.title)}</h3>
+            <img src="${p.image_filename ? '/static/uploads/products/' + p.image_filename : 'https://via.placeholder.com/300'}" alt="${p.title}">
+            <p><strong>Price:</strong> ₹ ${parseFloat(p.price).toFixed(2)}</p>
+            <p><strong>Stock:</strong> ${p.stock_quantity}</p>
+            <p><strong>Rating:</strong> ${avgRating > 0 ? avgRating.toFixed(1) + ' ★' : 'No ratings yet'}</p>
+            <p>${p.description || 'No description available'}</p>
+            <a href="/product/${p.id}" class="btn-gold">View Details</a>
+            <a href="${whatsappShare}" target="_blank" class="btn-gold" style="background:#25D366; margin-top:8px;">Share on WhatsApp</a>
+        `;
+        document.getElementById('quickViewModal').style.display = 'flex';
+    }
+
+    function closeQuickView() { document.getElementById('quickViewModal').style.display = 'none'; }
+
+    // ========== View Toggle ==========
+    document.getElementById('gridView').onclick = () => { currentView = 'grid'; filterProducts(); document.getElementById('gridView').classList.add('active'); document.getElementById('listView').classList.remove('active'); };
+    document.getElementById('listView').onclick = () => { currentView = 'list'; filterProducts(); document.getElementById('listView').classList.add('active'); document.getElementById('gridView').classList.remove('active'); };
+
+    // ========== Event Listeners ==========
+    document.getElementById('searchInput').addEventListener('keyup', filterProducts);
+    document.getElementById('categoryFilter').addEventListener('change', filterProducts);
+    document.getElementById('minPrice').addEventListener('input', filterProducts);
+    document.getElementById('maxPrice').addEventListener('input', filterProducts);
+    document.getElementById('ratingFilter').addEventListener('change', filterProducts);
+
+    // ========== Initialize ==========
+    window.addEventListener('DOMContentLoaded', async () => {
+        await fetchRatings();
+        await filterProducts();
+    });
+
+    // ========== Banner Slider ==========
+    let slideIndex = 0;
+    const slides = document.getElementById('slides');
+    if (slides && slides.children.length) {
+        const total = slides.children.length;
+        window.changeSlide = function(dir) {
+            slideIndex += dir;
+            if (slideIndex >= total) slideIndex = 0;
+            if (slideIndex < 0) slideIndex = total - 1;
+            slides.style.transform = `translateX(-${slideIndex * 100}%)`;
+        };
+        setInterval(() => { slideIndex++; if (slideIndex >= total) slideIndex = 0; slides.style.transform = `translateX(-${slideIndex * 100}%)`; }, 5000);
+    }
+
+    // Close modal on outside click
+    window.onclick = function(e) { if (e.target.classList.contains('modal')) closeQuickView(); }
+</script>
+</body>
+</html>

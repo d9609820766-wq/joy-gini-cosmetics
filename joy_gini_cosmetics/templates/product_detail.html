@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>{{ product.title }} - {{ settings.get('store_name', 'Joy Gini Cosmetics') }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: linear-gradient(135deg, #4a0e0e 0%, #7a1f1f 50%, #4a0e0e 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        /* back link */
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: gold;
+            text-decoration: none;
+            font-size: 1rem;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        /* product main area */
+        .product-detail {
+            background: rgba(0,0,0,0.6);
+            border-radius: 20px;
+            border: 2px solid gold;
+            padding: 25px;
+            margin-bottom: 40px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+        }
+        .product-image-area {
+            flex: 1;
+            min-width: 250px;
+            text-align: center;
+        }
+        .zoom-container {
+            position: relative;
+            overflow: hidden;
+            cursor: zoom-in;
+            border-radius: 15px;
+            border: 1px solid gold;
+        }
+        .main-image {
+            width: 100%;
+            max-width: 400px;
+            height: auto;
+            transition: transform 0.3s ease;
+            display: block;
+            margin: 0 auto;
+        }
+        .zoom-container:hover .main-image {
+            transform: scale(1.5);
+            cursor: zoom-out;
+        }
+        .product-info-area {
+            flex: 1;
+            min-width: 280px;
+        }
+        .product-title {
+            font-size: 2rem;
+            color: gold;
+            margin-bottom: 15px;
+        }
+        .product-price {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        .product-description {
+            line-height: 1.6;
+            margin: 15px 0;
+            font-size: 1rem;
+        }
+        .stock-status {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            margin: 10px 0;
+            background: #28a745;
+        }
+        .outofstock {
+            background: #dc3545;
+        }
+        /* order form */
+        .order-form {
+            background: rgba(0,0,0,0.4);
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+            border: 1px solid gold;
+        }
+        .order-form h3 {
+            color: gold;
+            margin-bottom: 15px;
+        }
+        .order-form input, .order-form textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 12px;
+            border-radius: 8px;
+            border: none;
+            background: #2c0a0a;
+            color: white;
+            border: 1px solid gold;
+        }
+        .order-form button {
+            background: gold;
+            color: #4a0e0e;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 30px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1.1rem;
+        }
+        .order-form button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .share-btn {
+            background: #1877f2;
+            margin-top: 10px;
+        }
+        /* reviews section */
+        .reviews-section {
+            background: rgba(0,0,0,0.5);
+            border-radius: 20px;
+            border: 2px solid gold;
+            padding: 25px;
+            margin-top: 30px;
+        }
+        .review-card {
+            background: rgba(0,0,0,0.4);
+            border-left: 4px solid gold;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+        }
+        .review-name {
+            font-weight: bold;
+            color: gold;
+        }
+        .review-rating {
+            color: #ffc107;
+            margin: 5px 0;
+        }
+        .review-comment {
+            margin-top: 8px;
+        }
+        .add-review {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid gold;
+        }
+        .add-review input, .add-review select, .add-review textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 12px;
+            background: #2c0a0a;
+            border: 1px solid gold;
+            color: white;
+            border-radius: 8px;
+        }
+        .btn-gold {
+            background: gold;
+            color: #4a0e0e;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 30px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        footer {
+            text-align: center;
+            padding: 20px 0;
+            margin-top: 40px;
+            border-top: 1px solid gold;
+        }
+        @media (max-width: 768px) {
+            .product-title { font-size: 1.5rem; }
+            .product-price { font-size: 1.4rem; }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+<div class="container">
+    <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> Back to Home</a>
+
+    <div class="product-detail">
+        <div class="product-image-area">
+            <div class="zoom-container">
+                <img class="main-image" id="mainImage" src="{% if product.image_filename %}{{ url_for('static', filename='uploads/products/' + product.image_filename) }}{% else %}https://via.placeholder.com/400x400?text=Joy+Gini{% endif %}" alt="{{ product.title }}">
+            </div>
+        </div>
+        <div class="product-info-area">
+            <h1 class="product-title">{{ product.title }}</h1>
+            <div class="product-price">₹ {{ "%.2f"|format(product.price) }}</div>
+            <div class="product-description">{{ product.description or 'No description available.' }}</div>
+            {% if product.stock_quantity > 0 %}
+                <div class="stock-status"><i class="fas fa-check-circle"></i> In Stock: {{ product.stock_quantity }} items</div>
+            {% else %}
+                <div class="stock-status outofstock"><i class="fas fa-times-circle"></i> Out of Stock</div>
+            {% endif %}
+
+            <!-- Order Form -->
+            <div class="order-form">
+                <h3><i class="fas fa-shopping-cart"></i> Place Order</h3>
+                <form id="orderForm" action="{{ url_for('place_order') }}" method="POST">
+                    <input type="hidden" name="product_id" value="{{ product.id }}">
+                    <input type="text" name="customer_name" placeholder="Full Name *" required>
+                    <input type="tel" name="customer_mobile" placeholder="Mobile Number *" required>
+                    <textarea name="address" rows="2" placeholder="Full Address *" required></textarea>
+                    <input type="number" name="quantity" id="quantity" value="1" min="1" max="{{ product.stock_quantity }}" required>
+                    <div id="totalPriceDisplay" style="margin-bottom:10px; font-weight:bold;">Total: ₹ {{ product.price }}</div>
+                    <button type="submit" {% if product.stock_quantity < 1 %}disabled{% endif %}>Place Order</button>
+                </form>
+                <button class="share-btn" onclick="shareProduct()"><i class="fas fa-share-alt"></i> Share Product</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reviews Section -->
+    <div class="reviews-section">
+        <h2 style="color:gold; margin-bottom:20px;"><i class="fas fa-star"></i> Customer Reviews</h2>
+        {% if reviews %}
+            {% for review in reviews %}
+            <div class="review-card">
+                <div class="review-name">{{ review.customer_name }}</div>
+                <div class="review-rating">
+                    {% for i in range(1,6) %}
+                        {% if i <= review.rating %}★{% else %}☆{% endif %}
+                    {% endfor %}
+                </div>
+                <div class="review-comment">{{ review.comment }}</div>
+                <small style="color:#ccc;">{{ review.created_at.strftime('%d %b %Y') }}</small>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p>No reviews yet. Be the first to review!</p>
+        {% endif %}
+
+        <!-- Add Review -->
+        <div class="add-review">
+            <h3 style="color:gold;">Write a Review</h3>
+            <form action="{{ url_for('submit_review') }}" method="POST">
+                <input type="hidden" name="product_id" value="{{ product.id }}">
+                <input type="text" name="name" placeholder="Your Name *" required>
+                <select name="rating" required>
+                    <option value="">Rating (1-5)</option>
+                    <option value="5">★★★★★ (5)</option>
+                    <option value="4">★★★★☆ (4)</option>
+                    <option value="3">★★★☆☆ (3)</option>
+                    <option value="2">★★☆☆☆ (2)</option>
+                    <option value="1">★☆☆☆☆ (1)</option>
+                </select>
+                <textarea name="comment" rows="3" placeholder="Your review..."></textarea>
+                <button type="submit" class="btn-gold">Submit Review</button>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+        &copy; 2026 {{ settings.get('store_name', 'Joy Gini Cosmetics') }} - All Rights Reserved.
+    </footer>
+</div>
+
+<script>
+    // auto calculate total price
+    const quantityInput = document.getElementById('quantity');
+    const price = {{ product.price }};
+    const totalSpan = document.getElementById('totalPriceDisplay');
+    function updateTotal() {
+        let qty = parseInt(quantityInput.value) || 0;
+        let total = price * qty;
+        totalSpan.innerHTML = 'Total: ₹ ' + total.toFixed(2);
+    }
+    if(quantityInput) {
+        quantityInput.addEventListener('input', updateTotal);
+        updateTotal();
+    }
+
+    // share product
+    function shareProduct() {
+        if (navigator.share) {
+            navigator.share({
+                title: '{{ product.title }}',
+                text: 'Check out this product at {{ settings.get("store_name", "Joy Gini Cosmetics") }}',
+                url: window.location.href
+            }).catch(() => {});
+        } else {
+            alert('Copy this link: ' + window.location.href);
+        }
+    }
+
+    // flash messages
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                alert("{{ message }}");
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+</script>
+</body>
+</html>

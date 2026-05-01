@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Order Details - Joy Gini Admin</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #4a0e0e 0%, #7a1f1f 50%, #4a0e0e 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+        }
+        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        .header {
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; padding: 20px 0; border-bottom: 2px solid gold;
+            margin-bottom: 25px;
+        }
+        .header h1 { color: gold; }
+        .card {
+            background: rgba(0,0,0,0.6);
+            border: 1px solid gold;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px dashed rgba(255,215,0,0.3);
+        }
+        .info-label { font-weight: bold; color: gold; }
+        table {
+            width: 100%;
+            background: rgba(0,0,0,0.4);
+            border-collapse: collapse;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid gold;
+        }
+        th { background: rgba(0,0,0,0.7); color: gold; }
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+        .status-pending { background: #ffc107; color: #000; }
+        .status-processing { background: #17a2b8; color: #fff; }
+        .status-completed { background: #28a745; color: #fff; }
+        .status-cancelled { background: #dc3545; color: #fff; }
+        .btn-back, .btn-print {
+            background: gold;
+            color: #4a0e0e;
+            padding: 8px 20px;
+            border-radius: 30px;
+            text-decoration: none;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        .btn-print { background: #6c757d; color: white; }
+        footer { text-align: center; margin-top: 30px; }
+        @media (max-width: 600px) {
+            .info-row { flex-direction: column; gap: 5px; }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1><i class="fas fa-file-invoice"></i> Order Details</h1>
+        <div>
+            <a href="/admin/orders" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Orders</a>
+            <a href="{{ url_for('thermal_invoice', order_id=order.id) }}" target="_blank" class="btn-print"><i class="fas fa-print"></i> Print Invoice</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3 style="color:gold; margin-bottom:15px;"><i class="fas fa-info-circle"></i> Order Information</h3>
+        <div class="info-row">
+            <span class="info-label">Order ID:</span>
+            <span>{{ order.order_id }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Order Date:</span>
+            <span>{{ order.order_date.strftime('%d %b %Y, %I:%M %p') }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Status:</span>
+            <span>
+                <span class="status 
+                    {% if order.status == 'Pending' %}status-pending
+                    {% elif order.status == 'Processing' %}status-processing
+                    {% elif order.status == 'Completed' %}status-completed
+                    {% else %}status-cancelled{% endif %}">
+                    {{ order.status }}
+                </span>
+            </span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Shipping Address:</span>
+            <span>{{ order.shipping_address or 'N/A' }}</span>
+        </div>
+        {% if order.notes %}
+        <div class="info-row">
+            <span class="info-label">Notes:</span>
+            <span>{{ order.notes }}</span>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <h3 style="color:gold; margin-bottom:15px;"><i class="fas fa-user"></i> Customer Information</h3>
+        <div class="info-row">
+            <span class="info-label">Name:</span>
+            <span>{{ order.customer.name }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Mobile:</span>
+            <span>{{ order.customer.mobile or 'N/A' }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Address:</span>
+            <span>{{ order.customer.address or 'N/A' }}</span>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3 style="color:gold; margin-bottom:15px;"><i class="fas fa-shopping-cart"></i> Products Ordered</h3>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr><th>Product</th><th>Quantity</th><th>Price (₹)</th><th>Subtotal (₹)</th></tr>
+                </thead>
+                <tbody>
+                    {% for item in order.items %}
+                    <tr>
+                        <td>{{ item.product.title }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>{{ "%.2f"|format(item.price_at_time) }}</td>
+                        <td>{{ "%.2f"|format(item.quantity * item.price_at_time) }}</td>
+                    </tr>
+                    {% endfor %}
+                    <tr style="border-top:2px solid gold;">
+                        <td colspan="3" style="text-align:right; font-weight:bold;">Total:</td>
+                        <td style="font-weight:bold; color:gold;">₹ {{ "%.2f"|format(order.total_amount) }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <footer>© Joy Gini Cosmetics – Order Management</footer>
+</div>
+</body>
+</html>

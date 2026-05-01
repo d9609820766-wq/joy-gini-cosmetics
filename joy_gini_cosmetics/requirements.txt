@@ -1,0 +1,8 @@
+Flask==2.3.3
+Flask-SQLAlchemy==3.1.1
+Werkzeug==2.3.7
+Pillow==10.3.0
+gunicorn==21.2.0
+python-barcode==0.15.1
+qrcode==7.4.2
+reportlab==4.0.4

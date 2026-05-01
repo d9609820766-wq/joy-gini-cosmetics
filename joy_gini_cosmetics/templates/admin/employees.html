@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Employee Management - Joy Gini Admin</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #4a0e0e 0%, #7a1f1f 50%, #4a0e0e 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .header {
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; padding: 20px 0; border-bottom: 2px solid gold;
+            margin-bottom: 30px;
+        }
+        .header h1 { color: gold; }
+        .btn-gold {
+            background: gold; color: #4a0e0e; padding: 8px 18px;
+            border-radius: 30px; text-decoration: none; font-weight: bold;
+            border: none; cursor: pointer;
+        }
+        .btn-dashboard {
+            background: #6c757d; color: white; padding: 8px 18px;
+            border-radius: 30px; text-decoration: none;
+            margin-left: 10px;
+        }
+        /* Search & Export Bar */
+        .search-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            background: rgba(0,0,0,0.4);
+            padding: 15px;
+            border-radius: 50px;
+        }
+        .search-fields {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            flex: 2;
+        }
+        .search-fields input {
+            background: #2c0a0a;
+            border: 1px solid gold;
+            border-radius: 40px;
+            padding: 8px 15px;
+            color: white;
+            width: 180px;
+        }
+        .search-fields input::placeholder {
+            color: #ccaa77;
+        }
+        .btn-excel {
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            padding: 8px 20px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            background: rgba(0,0,0,0.6);
+            border-collapse: collapse;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid gold;
+        }
+        th { background: rgba(0,0,0,0.8); color: gold; }
+        .action-buttons a, .action-buttons button {
+            display: inline-block;
+            margin: 0 3px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 0.75rem;
+            border: none;
+            cursor: pointer;
+        }
+        .edit-btn { background: #17a2b8; color: white; }
+        .delete-btn { background: #dc3545; color: white; }
+        .active-badge { background: #28a745; padding: 2px 8px; border-radius: 20px; font-size: 0.7rem; }
+        .inactive-badge { background: #dc3545; padding: 2px 8px; border-radius: 20px; font-size: 0.7rem; }
+        footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid gold; }
+        @media (max-width: 768px) {
+            .search-bar { flex-direction: column; align-items: stretch; border-radius: 20px; }
+            .search-fields input { width: 100%; }
+            table, thead, tbody, th, td, tr { display: block; }
+            th { display: none; }
+            tr { margin-bottom: 15px; border: 1px solid gold; border-radius: 10px; }
+            td { display: flex; justify-content: space-between; align-items: center; padding: 8px; }
+            td::before { content: attr(data-label); font-weight: bold; color: gold; width: 40%; }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1><i class="fas fa-id-badge"></i> Employee Management</h1>
+        <div>
+            <a href="/admin/dashboard" class="btn-dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="/admin/employee/add" class="btn-gold"><i class="fas fa-plus"></i> Add Employee</a>
+        </div>
+    </div>
+
+    <!-- Search and Export Section -->
+    <div class="search-bar">
+        <div class="search-fields">
+            <input type="text" id="searchEmpId" placeholder="🔍 Employee ID">
+            <input type="text" id="searchName" placeholder="🔍 Name">
+            <input type="text" id="searchMobile" placeholder="🔍 Mobile">
+        </div>
+        <button class="btn-excel" onclick="exportToCSV()"><i class="fas fa-file-excel"></i> Export as CSV</button>
+    </div>
+
+    <div style="overflow-x: auto;">
+        <table id="employeeTable">
+            <thead>
+                <tr><th>Emp ID</th><th>Name</th><th>Mobile</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+                {% for emp in employees %}
+                <tr data-id="{{ emp.id }}">
+                    <td data-label="Emp ID" class="emp-id">{{ emp.employee_id }}</td>
+                    <td data-label="Name" class="emp-name">{{ emp.name }}</td>
+                    <td data-label="Mobile" class="emp-mobile">{{ emp.mobile }}</td>
+                    <td data-label="Email">{{ emp.email }}</td>
+                    <td data-label="Role">{{ emp.role }}</td>
+                    <td data-label="Status">
+                        {% if emp.is_active %}
+                            <span class="active-badge"><i class="fas fa-check-circle"></i> Active</span>
+                        {% else %}
+                            <span class="inactive-badge"><i class="fas fa-ban"></i> Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td data-label="Actions" class="action-buttons">
+                        <a href="/admin/employee/edit/{{ emp.id }}" class="edit-btn"><i class="fas fa-edit"></i> Edit</a>
+                        <button class="delete-btn" onclick="deleteEmployee({{ emp.id }})"><i class="fas fa-trash"></i> Delete</button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="7" style="text-align: center;">No employees found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <footer>Only Admin can manage employees. Staff cannot access this page.</footer>
+</div>
+
+<script>
+    // === Live Search Filter ===
+    function filterEmployees() {
+        const empIdFilter = document.getElementById('searchEmpId').value.toLowerCase();
+        const nameFilter = document.getElementById('searchName').value.toLowerCase();
+        const mobileFilter = document.getElementById('searchMobile').value.toLowerCase();
+        const rows = document.querySelectorAll('#employeeTable tbody tr');
+        rows.forEach(row => {
+            const empId = row.querySelector('.emp-id')?.innerText.toLowerCase() || '';
+            const name = row.querySelector('.emp-name')?.innerText.toLowerCase() || '';
+            const mobile = row.querySelector('.emp-mobile')?.innerText.toLowerCase() || '';
+            let show = true;
+            if (empIdFilter && !empId.includes(empIdFilter)) show = false;
+            if (nameFilter && !name.includes(nameFilter)) show = false;
+            if (mobileFilter && !mobile.includes(mobileFilter)) show = false;
+            row.style.display = show ? '' : 'none';
+        });
+    }
+
+    document.getElementById('searchEmpId').addEventListener('keyup', filterEmployees);
+    document.getElementById('searchName').addEventListener('keyup', filterEmployees);
+    document.getElementById('searchMobile').addEventListener('keyup', filterEmployees);
+
+    // === CSV Export (visible rows only) ===
+    function exportToCSV() {
+        const rows = document.querySelectorAll('#employeeTable tbody tr');
+        const visibleRows = Array.from(rows).filter(row => row.style.display !== 'none' && row.querySelector('.emp-id'));
+        if (visibleRows.length === 0) {
+            alert('No employees to export.');
+            return;
+        }
+        const headers = ['Employee ID', 'Name', 'Mobile', 'Email', 'Role', 'Status'];
+        const data = [];
+        visibleRows.forEach(row => {
+            const empId = row.querySelector('.emp-id')?.innerText.trim() || '';
+            const name = row.querySelector('.emp-name')?.innerText.trim() || '';
+            const mobile = row.querySelector('.emp-mobile')?.innerText.trim() || '';
+            const email = row.querySelector('td:nth-child(4)')?.innerText.trim() || '';
+            const role = row.querySelector('td:nth-child(5)')?.innerText.trim() || '';
+            const status = row.querySelector('.active-badge, .inactive-badge')?.innerText.trim() || '';
+            data.push([empId, name, mobile, email, role, status]);
+        });
+        let csvContent = headers.join(',') + '\n';
+        data.forEach(row => {
+            const escapedRow = row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(',');
+            csvContent += escapedRow + '\n';
+        });
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `employees_${new Date().toISOString().slice(0,19)}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+
+    // === Delete employee ===
+    function deleteEmployee(id) {
+        if (confirm('Are you sure you want to delete this employee? This action cannot be undone.')) {
+            fetch(`/admin/employee/delete/${id}`)
+                .then(response => {
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                    } else {
+                        location.reload();
+                    }
+                })
+                .catch(error => alert('Error deleting employee.'));
+        }
+    }
+</script>
+</body>
+</html>

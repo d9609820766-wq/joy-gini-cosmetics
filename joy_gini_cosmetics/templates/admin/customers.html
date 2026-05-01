@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Customer Management - Joy Gini Admin</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #4a0e0e 0%, #7a1f1f 50%, #4a0e0e 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .header {
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; padding: 20px 0; border-bottom: 2px solid gold;
+            margin-bottom: 30px;
+        }
+        .header h1 { color: gold; }
+        /* Search & Export Bar */
+        .search-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            background: rgba(0,0,0,0.4);
+            padding: 15px;
+            border-radius: 50px;
+        }
+        .search-fields {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            flex: 2;
+        }
+        .search-fields input {
+            background: #2c0a0a;
+            border: 1px solid gold;
+            border-radius: 40px;
+            padding: 8px 15px;
+            color: white;
+            width: 180px;
+        }
+        .search-fields input::placeholder {
+            color: #ccaa77;
+        }
+        .btn-excel {
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            padding: 8px 20px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            background: rgba(0,0,0,0.6);
+            border-collapse: collapse;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid gold;
+        }
+        th { background: rgba(0,0,0,0.8); color: gold; }
+        .action-buttons a, .action-buttons button {
+            display: inline-block;
+            margin: 0 5px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        .history-btn { background: #17a2b8; color: white; }
+        .delete-btn { background: #dc3545; color: white; }
+        footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid gold; }
+        @media (max-width: 768px) {
+            .search-bar { flex-direction: column; align-items: stretch; border-radius: 20px; }
+            .search-fields input { width: 100%; }
+            table, thead, tbody, th, td, tr { display: block; }
+            th { display: none; }
+            tr { margin-bottom: 15px; border: 1px solid gold; border-radius: 10px; }
+            td { display: flex; justify-content: space-between; align-items: center; padding: 8px; }
+            td::before { content: attr(data-label); font-weight: bold; color: gold; width: 40%; }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1><i class="fas fa-users"></i> Customer Management</h1>
+        <a href="/admin/dashboard" style="color:gold;">← Dashboard</a>
+    </div>
+
+    <!-- Search and Export Section -->
+    <div class="search-bar">
+        <div class="search-fields">
+            <input type="text" id="searchName" placeholder="🔍 Customer Name">
+            <input type="text" id="searchMobile" placeholder="🔍 Mobile Number">
+        </div>
+        <button class="btn-excel" onclick="exportToCSV()"><i class="fas fa-file-excel"></i> Export as CSV</button>
+    </div>
+
+    <div style="overflow-x: auto;">
+        <table id="customerTable">
+            <thead>
+                <tr><th>Name</th><th>Mobile</th><th>Address</th><th>Joined</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+                {% for customer in customers %}
+                <tr data-id="{{ customer.id }}">
+                    <td data-label="Name" class="cust-name">{{ customer.name }}</td>
+                    <td data-label="Mobile" class="cust-mobile">{{ customer.mobile or 'N/A' }}</td>
+                    <td data-label="Address">{{ customer.address or 'N/A' }}</td>
+                    <td data-label="Joined">{{ customer.created_at.strftime('%d %b %Y') }}</td>
+                    <td data-label="Actions" class="action-buttons">
+                        <a href="/admin/customer/history/{{ customer.id }}" class="history-btn"><i class="fas fa-history"></i> History</a>
+                        <button class="delete-btn" onclick="deleteCustomer({{ customer.id }})"><i class="fas fa-trash"></i> Delete</button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" style="text-align: center;">No customers found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <footer>© Joy Gini Cosmetics – Customer Management</footer>
+</div>
+
+<script>
+    // === Live Search Filter ===
+    function filterCustomers() {
+        const nameFilter = document.getElementById('searchName').value.toLowerCase();
+        const mobileFilter = document.getElementById('searchMobile').value.toLowerCase();
+        const rows = document.querySelectorAll('#customerTable tbody tr');
+        rows.forEach(row => {
+            const name = row.querySelector('.cust-name')?.innerText.toLowerCase() || '';
+            const mobile = row.querySelector('.cust-mobile')?.innerText.toLowerCase() || '';
+            let show = true;
+            if (nameFilter && !name.includes(nameFilter)) show = false;
+            if (mobileFilter && !mobile.includes(mobileFilter)) show = false;
+            row.style.display = show ? '' : 'none';
+        });
+    }
+
+    document.getElementById('searchName').addEventListener('keyup', filterCustomers);
+    document.getElementById('searchMobile').addEventListener('keyup', filterCustomers);
+
+    // === CSV Export (visible rows only) ===
+    function exportToCSV() {
+        const rows = document.querySelectorAll('#customerTable tbody tr');
+        const visibleRows = Array.from(rows).filter(row => row.style.display !== 'none' && row.querySelector('td') && row.querySelector('td').getAttribute('colspan') !== '5');
+        if (visibleRows.length === 0) {
+            alert('No customers to export.');
+            return;
+        }
+        const headers = ['Name', 'Mobile', 'Address', 'Joined'];
+        const data = [];
+        visibleRows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length < 4) return;
+            const name = cells[0]?.innerText.trim() || '';
+            const mobile = cells[1]?.innerText.trim() || '';
+            const address = cells[2]?.innerText.trim() || '';
+            const joined = cells[3]?.innerText.trim() || '';
+            data.push([name, mobile, address, joined]);
+        });
+        let csvContent = headers.join(',') + '\n';
+        data.forEach(row => {
+            const escapedRow = row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(',');
+            csvContent += escapedRow + '\n';
+        });
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `customers_${new Date().toISOString().slice(0,19)}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+
+    // === Delete customer (unchanged, works with POST) ===
+    function deleteCustomer(id) {
+        if (confirm('⚠️ Warning: This will permanently delete the customer and all their orders. Stock will NOT be restored. Continue?')) {
+            fetch(`/admin/customer/delete/${id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Customer deleted successfully!');
+                    const row = document.querySelector(`tr[data-id='${id}']`);
+                    if (row) row.remove();
+                    if (document.querySelectorAll('#customerTable tbody tr:not([style*="display: none"])').length === 0) {
+                        document.querySelector('#customerTable tbody').innerHTML = '<tr><td colspan="5" style="text-align: center;">No customers found.</td></tr>';
+                    }
+                } else {
+                    alert('Delete failed: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Check console for details.');
+            });
+        }
+    }
+</script>
+</body>
+</html>

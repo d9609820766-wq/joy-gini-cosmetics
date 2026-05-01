@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Stock Management - Joy Gini Admin</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #4a0e0e 0%, #7a1f1f 50%, #4a0e0e 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .header {
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; padding: 20px 0; border-bottom: 2px solid gold;
+            margin-bottom: 30px;
+        }
+        .header h1 { color: gold; }
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px; margin-bottom: 40px;
+        }
+        .stat-card {
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
+            border: 1px solid gold; border-radius: 20px; padding: 20px;
+            text-align: center;
+        }
+        .stat-number { font-size: 2rem; font-weight: bold; color: gold; }
+        .stat-label { font-size: 0.9rem; margin-top: 8px; }
+        /* Barcode scanner card */
+        .card {
+            background: rgba(0,0,0,0.6); border: 2px solid gold;
+            border-radius: 25px; padding: 25px; margin-bottom: 30px;
+        }
+        .card h2 { color: gold; margin-bottom: 15px; }
+        input, select {
+            width: 100%; padding: 10px; margin-bottom: 12px;
+            background: #2c0a0a; border: 1px solid gold; border-radius: 40px;
+            color: white;
+        }
+        button {
+            background: gold; color: #4a0e0e; padding: 10px 20px;
+            border: none; border-radius: 40px; font-weight: bold;
+            cursor: pointer;
+        }
+        .scan-btn { background: #28a745; color: white; margin-bottom: 10px; width: 100%; }
+        #qr-reader { display: none; margin-top: 15px; border-radius: 15px; overflow: hidden; }
+        /* New plus/minus row */
+        .stock-control-row {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        .stock-control-row .qty-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0,0,0,0.3);
+            padding: 5px 15px;
+            border-radius: 50px;
+        }
+        .stock-control-row .qty-box input {
+            width: 80px;
+            margin: 0;
+            text-align: center;
+        }
+        .stock-control-row .qty-box button {
+            width: 50px;
+            margin: 0;
+            background: #2c0a0a;
+            border: 1px solid gold;
+            color: gold;
+        }
+        .stock-control-row .qty-box button:hover { background: gold; color: #4a0e0e; }
+        /* Search & filter bar */
+        .search-bar {
+            display: flex; flex-wrap: wrap; gap: 15px; align-items: center;
+            justify-content: space-between; margin-bottom: 25px;
+            background: rgba(0,0,0,0.4); padding: 15px; border-radius: 50px;
+        }
+        .filter-buttons { display: flex; flex-wrap: wrap; gap: 10px; }
+        .filter-btn {
+            background: #2c0a0a; border: 1px solid gold; border-radius: 40px;
+            padding: 6px 15px; cursor: pointer; color: white;
+        }
+        .filter-btn.active { background: gold; color: #4a0e0e; font-weight: bold; }
+        .search-product {
+            background: #2c0a0a; border: 1px solid gold; border-radius: 40px;
+            padding: 6px 15px; color: white; width: 220px;
+        }
+        .btn-excel { background: #28a745; color: white; border: none; border-radius: 40px;
+            padding: 6px 18px; cursor: pointer; font-weight: bold; }
+        /* Product list (per‑product +/-) */
+        .stock-list {
+            background: rgba(0,0,0,0.5); border-radius: 20px; padding: 15px;
+            max-height: 500px; overflow-y: auto;
+        }
+        .stock-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px; border-bottom: 1px solid rgba(255,215,0,0.3);
+            flex-wrap: wrap; gap: 10px;
+        }
+        .stock-info { flex: 2; min-width: 150px; }
+        .stock-qty { font-weight: bold; margin-left: 10px; }
+        .low-stock-qty { color: #ffc107; }
+        .outofstock-qty { color: #dc3545; }
+        footer { text-align: center; margin-top: 30px; }
+        a { color: gold; }
+        @media (max-width: 768px) {
+            .search-bar { flex-direction: column; align-items: stretch; border-radius: 20px; }
+            .search-product { width: 100%; }
+            .stock-item { flex-direction: column; align-items: stretch; }
+        }
+    </style>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1><i class="fas fa-database"></i> Stock Management</h1>
+        <a href="/admin/dashboard" style="color:gold;">← Dashboard</a>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+        <div class="stat-card"><div class="stat-number">{{ total_products }}</div><div class="stat-label">Total Products</div></div>
+        <div class="stat-card"><div class="stat-number">{{ low_stock_count }}</div><div class="stat-label">Low Stock (&lt;5)</div></div>
+        <div class="stat-card"><div class="stat-number">₹ {{ "%.2f"|format(total_stock_value) }}</div><div class="stat-label">Total Stock Value</div></div>
+        <div class="stat-card"><div class="stat-number">⚠️ N/A</div><div class="stat-label">Expiry Stock<br><small>(Add expiry field)</small></div></div>
+    </div>
+
+    <!-- Barcode Scanner & Plus/Minus Row -->
+    <div class="card">
+        <h2><i class="fas fa-qrcode"></i> Scan Barcode to Update Stock</h2>
+        <button type="button" class="scan-btn" onclick="startStockScan()"><i class="fas fa-camera"></i> Open Camera & Scan</button>
+        <div id="qr-reader"></div>
+        <label>Barcode Value (or type manually)</label>
+        <input type="text" id="barcodeInput" placeholder="Type or scan barcode">
+
+        <div class="stock-control-row">
+            <div class="qty-box">
+                <span>Quantity:</span>
+                <input type="number" id="stockQty" value="1" min="1" step="1">
+                <button onclick="updateStockByBarcode('add')"><i class="fas fa-plus"></i> +</button>
+                <button onclick="updateStockByBarcode('remove')"><i class="fas fa-minus"></i> –</button>
+            </div>
+        </div>
+        <p style="font-size:0.8rem; margin-top:10px;">👉 Click + to add quantity, – to remove quantity from the product.</p>
+    </div>
+
+    <!-- Search & Filter Bar -->
+    <div class="search-bar">
+        <div class="filter-buttons">
+            <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">All</button>
+            <button class="filter-btn" data-filter="low" onclick="setFilter('low')">Low Stock (&lt;5)</button>
+            <button class="filter-btn" data-filter="out" onclick="setFilter('out')">Out of Stock (0)</button>
+        </div>
+        <input type="text" id="searchProductName" class="search-product" placeholder="🔍 Search by product name...">
+        <button class="btn-excel" onclick="exportToCSV()"><i class="fas fa-file-excel"></i> Export CSV</button>
+    </div>
+
+    <!-- Product Stock List with per‑product +/‑ buttons -->
+    <div class="stock-list">
+        <h3 style="color:gold; margin-bottom:15px;">📦 Quick Adjust (per product)</h3>
+        <div id="stockItemsContainer">
+            {% for product in products %}
+            <div class="stock-item" data-id="{{ product.id }}" data-name="{{ product.title|lower }}" data-stock="{{ product.stock_quantity }}">
+                <div class="stock-info">
+                    <strong>{{ product.title }}</strong> <small>({{ product.barcode_data or 'No barcode' }})</small><br>
+                    <span class="stock-qty {% if product.stock_quantity < 5 %}low-stock-qty{% elif product.stock_quantity == 0 %}outofstock-qty{% endif %}">
+                        Stock: {{ product.stock_quantity }}
+                    </span>
+                </div>
+                <div class="stock-controls" style="display: flex; gap:8px; align-items:center;">
+                    <input type="number" id="qty_{{ product.id }}" value="1" min="1" step="1" style="width:70px; background:#2c0a0a; border:1px solid gold; border-radius:30px; padding:5px; text-align:center; color:white;">
+                    <button onclick="updateStockById({{ product.id }}, 'add')" style="background:#2c0a0a; border:1px solid gold; border-radius:50%; width:36px; height:36px; color:gold;"><i class="fas fa-plus"></i> +</button>
+                    <button onclick="updateStockById({{ product.id }}, 'remove')" style="background:#2c0a0a; border:1px solid gold; border-radius:50%; width:36px; height:36px; color:gold;"><i class="fas fa-minus"></i> -</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <footer>Use scanner first, then +/– to adjust stock. Per‑product buttons also available.</footer>
+</div>
+
+<script>
+    let html5QrCode = null;
+    let scanActive = false;
+    let currentFilter = 'all';
+
+    // ========== Barcode Scanner ==========
+    function startStockScan() {
+        const readerDiv = document.getElementById('qr-reader');
+        readerDiv.style.display = 'block';
+        if (html5QrCode) {
+            html5QrCode.stop().then(() => initScanner()).catch(() => initScanner());
+        } else {
+            initScanner();
+        }
+    }
+    function initScanner() {
+        html5QrCode = new Html5Qrcode("qr-reader");
+        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+        html5QrCode.start({ facingMode: "environment" }, config, (decodedText) => {
+            document.getElementById('barcodeInput').value = decodedText;
+            stopScanner();
+            alert(`Product barcode: ${decodedText}\nNow use + or – to update stock.`);
+        }, (error) => {});
+        scanActive = true;
+    }
+    function stopScanner() {
+        if (html5QrCode && scanActive) {
+            html5QrCode.stop().then(() => {
+                document.getElementById('qr-reader').style.display = 'none';
+                scanActive = false;
+            }).catch(() => {});
+        }
+    }
+    window.addEventListener('beforeunload', function() { if (html5QrCode && scanActive) html5QrCode.stop(); });
+
+    // ========== Update stock by barcode (for scanner/manual barcode) ==========
+    function updateStockByBarcode(action) {
+        const barcode = document.getElementById('barcodeInput').value.trim();
+        if (!barcode) { alert("Please scan or type a barcode first"); return; }
+        let qty = parseInt(document.getElementById('stockQty').value);
+        if (isNaN(qty) || qty < 1) qty = 1;
+        let change = (action === 'add') ? qty : -qty;
+        fetch('/admin/stock/update_by_barcode', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ barcode: barcode, change: change })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Stock updated for ${data.title}. New stock: ${data.new_stock}`);
+                location.reload();  // Reload to refresh all data
+            } else {
+                alert('Error: ' + (data.message || 'Product not found'));
+            }
+        })
+        .catch(err => alert('Network error: ' + err));
+    }
+
+    // ========== Update stock by product ID (for per‑product buttons) ==========
+    function updateStockById(productId, action) {
+        const qtyInput = document.getElementById(`qty_${productId}`);
+        let qty = parseInt(qtyInput.value);
+        if (isNaN(qty) || qty < 1) qty = 1;
+        let change = (action === 'add') ? qty : -qty;
+        fetch('/admin/stock/update_by_id', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ product_id: productId, change: change })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + (data.message || 'Update failed'));
+            }
+        })
+        .catch(err => alert('Network error: ' + err));
+    }
+
+    // ========== Filter and Search ==========
+    function filterAndDisplay() {
+        const searchTerm = document.getElementById('searchProductName').value.toLowerCase();
+        const items = document.querySelectorAll('#stockItemsContainer .stock-item');
+        items.forEach(item => {
+            const name = item.getAttribute('data-name');
+            const stock = parseInt(item.getAttribute('data-stock'));
+            let match = true;
+            if (currentFilter === 'low' && stock >= 5) match = false;
+            if (currentFilter === 'out' && stock !== 0) match = false;
+            if (searchTerm && !name.includes(searchTerm)) match = false;
+            item.style.display = match ? 'flex' : 'none';
+        });
+    }
+    function setFilter(filter) {
+        currentFilter = filter;
+        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelector(`.filter-btn[data-filter="${filter}"]`).classList.add('active');
+        filterAndDisplay();
+    }
+    document.getElementById('searchProductName').addEventListener('keyup', filterAndDisplay);
+    setFilter('all');
+
+    // ========== CSV Export ==========
+    function exportToCSV() {
+        const visibleItems = Array.from(document.querySelectorAll('#stockItemsContainer .stock-item')).filter(el => el.style.display !== 'none');
+        if (visibleItems.length === 0) { alert('No products to export.'); return; }
+        const headers = ['Product Name', 'Barcode', 'Stock Quantity'];
+        const data = [];
+        visibleItems.forEach(item => {
+            const name = item.querySelector('strong').innerText.trim();
+            const barcodeSpan = item.querySelector('.stock-info small');
+            const barcode = barcodeSpan ? barcodeSpan.innerText.replace(/[()]/g, '').trim() : '';
+            const stockSpan = item.querySelector('.stock-qty');
+            let stock = stockSpan ? stockSpan.innerText.replace('Stock:', '').trim() : '';
+            data.push([name, barcode, stock]);
+        });
+        let csvContent = headers.join(',') + '\n';
+        data.forEach(row => {
+            csvContent += row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(',') + '\n';
+        });
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `stock_${new Date().toISOString().slice(0,19)}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+</script>
+</body>
+</html>

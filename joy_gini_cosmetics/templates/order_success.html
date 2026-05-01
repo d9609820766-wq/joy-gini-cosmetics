@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Order Success - {{ settings.get('store_name', 'Joy Gini Cosmetics') }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: linear-gradient(135deg, #4a0e0e 0%, #7a1f1f 50%, #4a0e0e 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .success-card {
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 25px;
+            border: 2px solid gold;
+            padding: 40px 30px;
+            max-width: 550px;
+            width: 90%;
+            margin: 40px auto;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .check-icon {
+            font-size: 70px;
+            color: #28a745;
+            background: white;
+            width: 100px;
+            height: 100px;
+            line-height: 100px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            box-shadow: 0 0 15px #28a745;
+        }
+        h1 {
+            color: gold;
+            margin-bottom: 15px;
+        }
+        .order-id-box {
+            background: #2c0a0a;
+            border: 1px solid gold;
+            border-radius: 12px;
+            padding: 15px;
+            margin: 20px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .order-id {
+            font-size: 1.5rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+            color: gold;
+            word-break: break-all;
+        }
+        .copy-btn {
+            background: gold;
+            color: #4a0e0e;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 30px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .copy-btn:hover {
+            background: #ffcc00;
+            transform: scale(1.02);
+        }
+        .info-text {
+            background: rgba(255,215,0,0.15);
+            border-left: 4px solid gold;
+            padding: 12px;
+            border-radius: 10px;
+            margin: 15px 0;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+        .redirect-timer {
+            font-size: 0.9rem;
+            margin: 20px 0;
+            color: #ffd966;
+        }
+        .btn-home {
+            display: inline-block;
+            background: gold;
+            color: #4a0e0e;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 40px;
+            font-weight: bold;
+            margin-top: 10px;
+            transition: 0.3s;
+        }
+        .btn-home:hover {
+            background: #ffcc00;
+            transform: scale(1.02);
+        }
+        footer {
+            margin-top: 25px;
+            font-size: 0.7rem;
+            color: #ccc;
+        }
+        @media (max-width: 500px) {
+            .success-card { padding: 25px 20px; }
+            .order-id { font-size: 1.2rem; }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+<div class="success-card">
+    <div class="check-icon">
+        <i class="fas fa-check-circle"></i>
+    </div>
+    <h1>Order Placed Successfully!</h1>
+    <p>Thank you for shopping with us. Your order has been confirmed.</p>
+
+    <div class="order-id-box">
+        <span style="font-weight:bold;">Order ID:</span>
+        <span class="order-id" id="orderId">{{ order.order_id }}</span>
+        <button class="copy-btn" onclick="copyOrderId()"><i class="fas fa-copy"></i> Copy ID</button>
+    </div>
+
+    <div class="info-text">
+        <i class="fas fa-camera"></i> <strong>Please take a screenshot</strong> of this page for your records.<br>
+        You can also copy the Order ID above to track your order.
+    </div>
+
+    <div class="redirect-timer">
+        <i class="fas fa-hourglass-half"></i> Redirecting to home page in <span id="countdown">6</span> seconds...
+    </div>
+
+    <a href="/" class="btn-home"><i class="fas fa-home"></i> Go to Home Now</a>
+    <footer>Joy Gini Cosmetics – Your beauty, our priority.</footer>
+</div>
+
+<script>
+    // copy order ID
+    function copyOrderId() {
+        const orderId = document.getElementById('orderId').innerText;
+        navigator.clipboard.writeText(orderId).then(() => {
+            alert('Order ID copied: ' + orderId);
+        }).catch(() => {
+            alert('Press Ctrl+C to copy');
+        });
+    }
+
+    // auto redirect after 6 seconds
+    let seconds = 6;
+    const countdownSpan = document.getElementById('countdown');
+    const interval = setInterval(() => {
+        seconds--;
+        countdownSpan.innerText = seconds;
+        if (seconds <= 0) {
+            clearInterval(interval);
+            window.location.href = '/';
+        }
+    }, 1000);
+</script>
+</body>
+</html>

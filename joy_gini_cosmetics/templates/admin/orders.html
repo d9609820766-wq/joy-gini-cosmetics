@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Online Orders - Joy Gini Admin</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #4a0e0e 0%, #7a1f1f 50%, #4a0e0e 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .header {
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; padding: 20px 0; border-bottom: 2px solid gold;
+            margin-bottom: 30px;
+        }
+        .header h1 { color: gold; }
+        /* Search & Export Bar */
+        .search-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            background: rgba(0,0,0,0.4);
+            padding: 15px;
+            border-radius: 50px;
+        }
+        .search-fields {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            flex: 2;
+        }
+        .search-fields input {
+            background: #2c0a0a;
+            border: 1px solid gold;
+            border-radius: 40px;
+            padding: 8px 15px;
+            color: white;
+            width: 180px;
+        }
+        .search-fields input::placeholder {
+            color: #ccaa77;
+        }
+        .btn-excel {
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            padding: 8px 20px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            background: rgba(0,0,0,0.6);
+            border-collapse: collapse;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid gold;
+        }
+        th { background: rgba(0,0,0,0.8); color: gold; }
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+        .status-pending { background: #ffc107; color: #000; }
+        .status-processing { background: #17a2b8; color: #fff; }
+        .status-completed { background: #28a745; color: #fff; }
+        .status-cancelled { background: #dc3545; color: #fff; }
+        select, button {
+            padding: 5px 8px;
+            border-radius: 20px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+        .btn-update { background: gold; color: #4a0e0e; }
+        .btn-view { background: #17a2b8; color: white; }
+        .btn-delete { background: #dc3545; color: white; }
+        .btn-print { background: #6c757d; color: white; }
+        .action-form { display: inline-block; margin: 0 3px; }
+        footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid gold; }
+        a { color: gold; }
+        @media (max-width: 768px) {
+            .search-bar { flex-direction: column; align-items: stretch; border-radius: 20px; }
+            .search-fields input { width: 100%; }
+            table, thead, tbody, th, td, tr { display: block; }
+            th { display: none; }
+            tr { margin-bottom: 15px; border: 1px solid gold; border-radius: 10px; }
+            td { display: flex; justify-content: space-between; align-items: center; padding: 8px; }
+            td::before { content: attr(data-label); font-weight: bold; color: gold; width: 40%; }
+            .action-buttons { justify-content: flex-end; flex-wrap: wrap; gap: 5px; }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1><i class="fas fa-truck"></i> Online Orders</h1>
+        <a href="/admin/dashboard" style="color:gold;">← Dashboard</a>
+    </div>
+
+    <!-- Search and Export Section -->
+    <div class="search-bar">
+        <div class="search-fields">
+            <input type="text" id="searchOrderId" placeholder="🔍 Order ID">
+            <input type="text" id="searchCustomer" placeholder="🔍 Customer Name">
+        </div>
+        <button class="btn-excel" onclick="exportToCSV()"><i class="fas fa-file-excel"></i> Export as CSV</button>
+    </div>
+
+    <div style="overflow-x: auto;">
+        <table id="ordersTable">
+            <thead>
+                <tr><th>Order ID</th><th>Customer</th><th>Date</th><th>Total (₹)</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr data-id="{{ order.id }}">
+                    <td data-label="Order ID" class="order-id">{{ order.order_id }}</td>
+                    <td data-label="Customer" class="customer-name">{{ order.customer.name }}</td>
+                    <td data-label="Date">{{ order.order_date.strftime('%d %b %Y, %I:%M %p') }}</td>
+                    <td data-label="Total">₹ {{ "%.2f"|format(order.total_amount) }}</td>
+                    <td data-label="Status">
+                        <form method="POST" action="{{ url_for('admin_order_update_status', id=order.id) }}" class="action-form">
+                            <select name="status" onchange="this.form.submit()">
+                                <option value="Pending" {% if order.status == 'Pending' %}selected{% endif %}>Pending</option>
+                                <option value="Processing" {% if order.status == 'Processing' %}selected{% endif %}>Processing</option>
+                                <option value="Completed" {% if order.status == 'Completed' %}selected{% endif %}>Completed</option>
+                                <option value="Cancelled" {% if order.status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
+                            </select>
+                        </form>
+                    </td>
+                    <td data-label="Actions" class="action-buttons">
+                        <a href="{{ url_for('admin_order_view', id=order.id) }}" class="btn-view"><i class="fas fa-eye"></i> View</a>
+                        <a href="{{ url_for('thermal_invoice', order_id=order.id) }}" target="_blank" class="btn-print"><i class="fas fa-print"></i> Invoice</a>
+                        <button class="btn-delete" onclick="deleteOrder({{ order.id }})"><i class="fas fa-trash"></i> Delete</button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" style="text-align: center;">No orders found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <footer>© Joy Gini Cosmetics – Manage online customer orders</footer>
+</div>
+
+<script>
+    // === Live Search Filter ===
+    function filterOrders() {
+        const orderIdFilter = document.getElementById('searchOrderId').value.toLowerCase();
+        const customerFilter = document.getElementById('searchCustomer').value.toLowerCase();
+        const rows = document.querySelectorAll('#ordersTable tbody tr');
+        rows.forEach(row => {
+            const orderId = row.querySelector('.order-id')?.innerText.toLowerCase() || '';
+            const customer = row.querySelector('.customer-name')?.innerText.toLowerCase() || '';
+            let show = true;
+            if (orderIdFilter && !orderId.includes(orderIdFilter)) show = false;
+            if (customerFilter && !customer.includes(customerFilter)) show = false;
+            row.style.display = show ? '' : 'none';
+        });
+    }
+
+    document.getElementById('searchOrderId').addEventListener('keyup', filterOrders);
+    document.getElementById('searchCustomer').addEventListener('keyup', filterOrders);
+
+    // === CSV Export (visible rows only or all? We'll export all visible rows) ===
+    function exportToCSV() {
+        const rows = document.querySelectorAll('#ordersTable tbody tr');
+        const visibleRows = Array.from(rows).filter(row => row.style.display !== 'none');
+        if (visibleRows.length === 0) {
+            alert('No orders to export.');
+            return;
+        }
+        // Prepare CSV headers and data
+        const headers = ['Order ID', 'Customer Name', 'Date', 'Total (₹)', 'Status'];
+        const data = [];
+        visibleRows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length < 5) return;
+            const orderId = cells[0]?.innerText.trim() || '';
+            const customer = cells[1]?.innerText.trim() || '';
+            const date = cells[2]?.innerText.trim() || '';
+            const total = cells[3]?.innerText.trim().replace('₹', '').trim() || '';
+            // Get status from the select element's selected value
+            const statusSelect = cells[4]?.querySelector('select');
+            const status = statusSelect ? statusSelect.options[statusSelect.selectedIndex].text : '';
+            data.push([orderId, customer, date, total, status]);
+        });
+        // Build CSV string
+        let csvContent = headers.join(',') + '\n';
+        data.forEach(row => {
+            // Wrap fields with commas in quotes
+            const escapedRow = row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(',');
+            csvContent += escapedRow + '\n';
+        });
+        // Download
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `orders_${new Date().toISOString().slice(0,19)}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+
+    // Delete function (unchanged)
+    function deleteOrder(id) {
+        if (confirm('⚠️ Warning: This will permanently delete the order and restore the product stock. Continue?')) {
+            fetch(`/admin/order/delete/${id}`)
+                .then(response => {
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                    } else {
+                        location.reload();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while deleting the order.');
+                });
+        }
+    }
+</script>
+</body>
+</html>

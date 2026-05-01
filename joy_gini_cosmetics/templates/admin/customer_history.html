@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Customer Order History - Joy Gini Admin</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #4a0e0e 0%, #7a1f1f 50%, #4a0e0e 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+        }
+        .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+        .header {
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; padding: 20px 0; border-bottom: 2px solid gold;
+            margin-bottom: 30px;
+        }
+        .header h1 { color: gold; }
+        .customer-info {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid gold;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 25px;
+        }
+        table {
+            width: 100%;
+            background: rgba(0,0,0,0.6);
+            border-collapse: collapse;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid gold;
+        }
+        th { background: rgba(0,0,0,0.8); color: gold; }
+        .status {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+        }
+        .status-pending { background: #ffc107; color: #000; }
+        .status-completed { background: #28a745; color: #fff; }
+        .status-cancelled { background: #dc3545; color: #fff; }
+        .status-processing { background: #17a2b8; color: #fff; }
+        footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid gold; }
+        a { color: gold; }
+        .btn-back {
+            background: gold;
+            color: #4a0e0e;
+            padding: 8px 20px;
+            border-radius: 30px;
+            text-decoration: none;
+        }
+        @media (max-width: 768px) {
+            table, thead, tbody, th, td, tr { display: block; }
+            th { display: none; }
+            tr { margin-bottom: 15px; border: 1px solid gold; border-radius: 10px; }
+            td { display: flex; justify-content: space-between; align-items: center; padding: 8px; }
+            td::before { content: attr(data-label); font-weight: bold; color: gold; width: 40%; }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1><i class="fas fa-history"></i> Order History</h1>
+        <a href="/admin/customers" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Customers</a>
+    </div>
+
+    <div class="customer-info">
+        <h3><i class="fas fa-user-circle"></i> {{ customer.name }}</h3>
+        <p><i class="fas fa-mobile-alt"></i> {{ customer.mobile or 'No mobile' }}</p>
+        <p><i class="fas fa-map-marker-alt"></i> {{ customer.address or 'No address' }}</p>
+        <p><i class="fas fa-calendar-alt"></i> Joined: {{ customer.created_at.strftime('%d %b %Y') }}</p>
+    </div>
+
+    <h3 style="color:gold; margin:20px 0;">All Orders ({{ orders|length }})</h3>
+    <div style="overflow-x: auto;">
+        <table>
+            <thead>
+                <tr><th>Order ID</th><th>Date</th><th>Total (₹)</th><th>Status</th><th>Items</th></tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td data-label="Order ID">{{ order.order_id }}</td>
+                    <td data-label="Date">{{ order.order_date.strftime('%d %b %Y, %I:%M %p') }}</td>
+                    <td data-label="Total">₹ {{ "%.2f"|format(order.total_amount) }}</td>
+                    <td data-label="Status">
+                        <span class="status 
+                            {% if order.status == 'Pending' %}status-pending
+                            {% elif order.status == 'Completed' %}status-completed
+                            {% elif order.status == 'Cancelled' %}status-cancelled
+                            {% else %}status-processing{% endif %}">
+                            {{ order.status }}
+                        </span>
+                    </td>
+                    <td data-label="Items">
+                        {% for item in order.items %}
+                            {{ item.product.title }} (x{{ item.quantity }})<br>
+                        {% endfor %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" style="text-align: center;">No orders found for this customer.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <footer>© Joy Gini Cosmetics – Customer Order History</footer>
+</div>
+</body>
+</html>

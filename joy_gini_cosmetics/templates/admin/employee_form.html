@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>{% if emp %}Edit Employee{% else %}Add Employee{% endif %} - Joy Gini Admin</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #4a0e0e 0%, #7a1f1f 50%, #4a0e0e 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .form-container {
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(8px);
+            border: 2px solid gold;
+            border-radius: 25px;
+            padding: 30px;
+            width: 100%;
+            max-width: 500px;
+        }
+        h2 {
+            color: gold;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        label {
+            display: block;
+            margin: 12px 0 5px;
+            font-weight: bold;
+            color: #ffd966;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px 15px;
+            background: #2c0a0a;
+            border: 1px solid gold;
+            border-radius: 40px;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+        }
+        input:focus, select:focus {
+            border-color: #ffcc00;
+            box-shadow: 0 0 5px gold;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .checkbox-group input {
+            width: auto;
+            transform: scale(1.2);
+            cursor: pointer;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: gold;
+            color: #4a0e0e;
+            border: none;
+            border-radius: 40px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: 0.3s;
+        }
+        button:hover {
+            background: #ffcc00;
+            transform: scale(1.02);
+        }
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 15px;
+            color: gold;
+            text-decoration: none;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        .readonly-field {
+            background: #1a0505;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.7rem;
+            color: #ccaa77;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+<div class="form-container">
+    <h2><i class="fas fa-user-plus"></i> {% if emp %}Edit Employee{% else %}Add New Employee{% endif %}</h2>
+    <form method="POST">
+        {% if emp %}
+        <label>Employee ID</label>
+        <input type="text" name="employee_id" value="{{ emp.employee_id }}" class="readonly-field" readonly>
+        {% endif %}
+        
+        <label>Full Name *</label>
+        <input type="text" name="name" value="{{ emp.name if emp else '' }}" required>
+        
+        <label>Mobile Number *</label>
+        <input type="tel" name="mobile" value="{{ emp.mobile if emp else '' }}" required>
+        
+        <label>Email Address *</label>
+        <input type="email" name="email" value="{{ emp.email if emp else '' }}" required>
+        
+        <label>{% if emp %}New Password (leave blank to keep unchanged){% else %}Password *{% endif %}</label>
+        <input type="password" name="password" {% if not emp %}required{% endif %} placeholder="Min 4 characters">
+        
+        <label>Role</label>
+        <select name="role">
+            <option value="staff" {% if emp and emp.role == 'staff' %}selected{% endif %}>Staff</option>
+            <option value="admin" {% if emp and emp.role == 'admin' %}selected{% endif %}>Admin</option>
+        </select>
+        
+        {% if emp %}
+        <div class="checkbox-group">
+            <input type="checkbox" name="is_active" id="is_active" {% if emp.is_active %}checked{% endif %}>
+            <label for="is_active" style="margin:0;">Active (can login)</label>
+        </div>
+        {% endif %}
+        
+        <button type="submit"><i class="fas fa-save"></i> {% if emp %}Update Employee{% else %}Create Employee{% endif %}</button>
+    </form>
+    <a href="/admin/employees" class="back-link"><i class="fas fa-arrow-left"></i> Back to Employee List</a>
+    <footer>Only admin can manage employees. Staff cannot access this page.</footer>
+</div>
+</body>
+</html>

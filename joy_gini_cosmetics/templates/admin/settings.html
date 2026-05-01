@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Settings - Joy Gini Admin</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #4a0e0e 0%, #7a1f1f 50%, #4a0e0e 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+        }
+        .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+        .header {
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; padding: 20px 0; border-bottom: 2px solid gold;
+            margin-bottom: 30px;
+        }
+        .header h1 { color: gold; }
+        .card {
+            background: rgba(0,0,0,0.6);
+            border: 1px solid gold;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        .card h2 { color: gold; margin-bottom: 20px; border-left: 4px solid gold; padding-left: 12px; }
+        label { display: block; margin: 12px 0 5px; font-weight: bold; }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            background: #2c0a0a;
+            border: 1px solid gold;
+            border-radius: 40px;
+            color: white;
+        }
+        button {
+            background: gold; color: #4a0e0e; padding: 10px 25px;
+            border: none; border-radius: 40px; font-weight: bold;
+            cursor: pointer; margin-top: 15px;
+        }
+        .banner-item {
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(0,0,0,0.4); padding: 10px; border-radius: 15px;
+            margin-bottom: 10px; flex-wrap: wrap; gap: 10px;
+        }
+        .banner-img { max-width: 60px; border-radius: 8px; border: 1px solid gold; }
+        .btn-small {
+            padding: 4px 12px; font-size: 0.8rem; margin: 0 3px;
+            background: #6c757d; color: white; border-radius: 30px;
+            text-decoration: none; display: inline-block;
+        }
+        .btn-delete { background: #dc3545; }
+        .btn-edit { background: #17a2b8; }
+        footer { text-align: center; margin-top: 30px; }
+        @media (max-width: 600px) {
+            .banner-item { flex-direction: column; text-align: center; }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1><i class="fas fa-sliders-h"></i> System Settings</h1>
+        <a href="/admin/dashboard" style="color:gold;">← Dashboard</a>
+    </div>
+
+    <!-- Store Info & GST -->
+    <div class="card">
+        <h2><i class="fas fa-store"></i> Store Information & GST</h2>
+        <form method="POST" enctype="multipart/form-data">
+            <label>Store Name</label>
+            <input type="text" name="store_name" value="{{ settings.get('store_name', '') }}">
+            <label>Store Address</label>
+            <textarea name="store_address" rows="2">{{ settings.get('store_address', '') }}</textarea>
+            <label>Store Phone</label>
+            <input type="text" name="store_phone" value="{{ settings.get('store_phone', '') }}">
+            <label>GST Rate (%)</label>
+            <input type="number" step="any" name="gst_rate" value="{{ settings.get('gst_rate', '18') }}" min="0" max="28">
+            <label>Facebook URL</label>
+            <input type="url" name="facebook_url" value="{{ settings.get('facebook_url', '') }}">
+            <label>Instagram URL</label>
+            <input type="url" name="instagram_url" value="{{ settings.get('instagram_url', '') }}">
+            <label>Twitter URL</label>
+            <input type="url" name="twitter_url" value="{{ settings.get('twitter_url', '') }}">
+            <label>Store Logo (Upload New)</label>
+            <input type="file" name="logo" accept="image/*">
+            {% if settings.get('logo_filename') %}
+                <div style="margin-top:8px;">Current: <img src="{{ url_for('static', filename='uploads/logo/' + settings['logo_filename']) }}" style="max-height:50px;"></div>
+            {% endif %}
+            <button type="submit"><i class="fas fa-save"></i> Save Store Settings</button>
+        </form>
+    </div>
+
+    <!-- Banner Management -->
+    <div class="card">
+        <h2><i class="fas fa-images"></i> Sliding Banners</h2>
+        <form method="POST" action="/admin/banner/add" enctype="multipart/form-data" style="margin-bottom:20px;">
+            <label>Add New Banner</label>
+            <input type="file" name="banner_image" accept="image/*" required>
+            <label>Link URL (optional)</label>
+            <input type="url" name="link_url" placeholder="https://...">
+            <button type="submit"><i class="fas fa-plus"></i> Add Banner</button>
+        </form>
+
+        <h3>Existing Banners</h3>
+        {% for banner in banners %}
+        <div class="banner-item">
+            <img class="banner-img" src="{{ url_for('static', filename='uploads/banners/' + banner.image_filename) }}">
+            <div style="flex:1;">
+                <form method="POST" action="/admin/banner/edit/{{ banner.id }}" style="display:inline;">
+                    <input type="hidden" name="link_url" value="{{ banner.link_url or '' }}">
+                    <input type="checkbox" name="is_active" {% if banner.is_active %}checked{% endif %} onchange="this.form.submit()"> Active
+                </form>
+                <span><strong>Link:</strong> {{ banner.link_url or 'None' }}</span>
+            </div>
+            <div>
+                <a href="/admin/banner/delete/{{ banner.id }}" class="btn-small btn-delete" onclick="return confirm('Delete this banner?')"><i class="fas fa-trash"></i> Delete</a>
+            </div>
+        </div>
+        {% else %}
+        <p>No banners. Add one above.</p>
+        {% endfor %}
+    </div>
+
+    <footer>© Joy Gini Cosmetics – Admin Settings</footer>
+</div>
+
+<script>
+    // Auto-submit for active checkbox
+    // Already using onchange in form
+</script>
+</body>
+</html>

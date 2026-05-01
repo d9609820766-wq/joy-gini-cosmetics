@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Billing System - Joy Gini Admin</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #4a0e0e 0%, #7a1f1f 50%, #4a0e0e 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+        }
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        .header {
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; padding: 15px 0; border-bottom: 2px solid gold;
+            margin-bottom: 25px;
+        }
+        h1 { color: gold; }
+        .card {
+            background: rgba(0,0,0,0.65);
+            border: 2px solid gold;
+            border-radius: 25px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        label { display: block; margin: 12px 0 5px; font-weight: bold; }
+        input, select, button, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            background: #2c0a0a;
+            border: 1px solid gold;
+            border-radius: 40px;
+            color: white;
+            font-size: 1rem;
+        }
+        button {
+            background: gold;
+            color: #4a0e0e;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        button:hover { background: #ffcc00; }
+        .scan-btn { background: #28a745; color: white; margin-top: 5px; margin-bottom: 15px; }
+        #qr-reader { display: none; margin-bottom: 15px; border-radius: 15px; overflow: hidden; }
+        .flex-row { display: flex; gap: 10px; flex-wrap: wrap; }
+        .flex-row > div { flex: 1; }
+        .total-display { font-size: 1.5rem; text-align: center; margin: 15px 0; color: gold; }
+        footer { text-align: center; margin-top: 30px; }
+        a { color: gold; }
+        .product-info, .manual-info {
+            background: rgba(0,0,0,0.4);
+            padding: 12px;
+            border-radius: 15px;
+            margin: 10px 0;
+        }
+        .search-suggestions {
+            background: #2c0a0a;
+            border: 1px solid gold;
+            border-radius: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            position: absolute;
+            width: calc(100% - 20px);
+            z-index: 100;
+        }
+        .search-suggestions div {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(255,215,0,0.3);
+        }
+        .search-suggestions div:hover { background: #4a1e1e; }
+        .relative { position: relative; }
+        .mode-toggle {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            border-radius: 50px;
+        }
+        .mode-toggle label {
+            margin: 0;
+            cursor: pointer;
+        }
+        .hide { display: none; }
+    </style>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1><i class="fas fa-receipt"></i> Billing System</h1>
+        <a href="/admin/dashboard" style="color:gold;">← Dashboard</a>
+    </div>
+
+    <div class="card">
+        <h2>New Invoice</h2>
+
+        <!-- Mode Toggle -->
+        <div class="mode-toggle">
+            <label>
+                <input type="radio" name="billing_mode" value="inventory" checked onchange="toggleBillingMode()"> 
+                <i class="fas fa-database"></i> Inventory Product
+            </label>
+            <label>
+                <input type="radio" name="billing_mode" value="manual" onchange="toggleBillingMode()"> 
+                <i class="fas fa-edit"></i> Manual Entry (Not in System)
+            </label>
+        </div>
+
+        <form id="billingForm" method="POST">
+            <!-- ========== INVENTORY MODE (Existing) ========== -->
+            <div id="inventoryMode">
+                <label>Scan Barcode (or type & press Enter)</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="barcodeInput" name="barcode" placeholder="Type or scan barcode" style="flex:1;" autocomplete="off">
+                    <button type="button" class="scan-btn" onclick="startBarcodeScan()"><i class="fas fa-camera"></i> Scan</button>
+                </div>
+                <div id="qr-reader"></div>
+
+                <label>Or Search Product (name/barcode)</label>
+                <div class="relative">
+                    <input type="text" id="searchProduct" placeholder="Start typing product name or barcode..." autocomplete="off">
+                    <div id="searchResults" class="search-suggestions" style="display:none;"></div>
+                </div>
+
+                <input type="hidden" id="selectedProductId" name="product_id" value="">
+
+                <div id="productDetails" class="product-info" style="display:none;">
+                    <p><strong>Product:</strong> <span id="displayTitle"></span></p>
+                    <p><strong>Price:</strong> ₹<span id="displayPrice">0</span></p>
+                    <p><strong>Available Stock:</strong> <span id="displayStock">0</span></p>
+                </div>
+            </div>
+
+            <!-- ========== MANUAL MODE (New) ========== -->
+            <div id="manualMode" class="hide">
+                <div class="manual-info">
+                    <label>Product Name *</label>
+                    <input type="text" id="manualProductName" name="manual_product_name" placeholder="e.g., Loose item, Gift pack">
+
+                    <label>Price (₹) *</label>
+                    <input type="number" id="manualPrice" name="manual_price" step="any" min="0" value="0">
+                </div>
+                <input type="hidden" id="isManualMode" name="is_manual" value="0">
+            </div>
+
+            <!-- Common Fields -->
+            <label>Quantity *</label>
+            <input type="number" id="quantity" name="quantity" value="1" min="1" required>
+
+            <div class="flex-row">
+                <div>
+                    <label>Discount Type</label>
+                    <select id="discountType" name="discount_type">
+                        <option value="fixed">Fixed (₹)</option>
+                        <option value="percent">Percentage (%)</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Discount Value</label>
+                    <input type="number" id="discountValue" name="discount_value" value="0" step="any" min="0">
+                </div>
+            </div>
+
+            <div class="total-display">
+                Total: ₹ <span id="totalAmount">0.00</span>
+            </div>
+
+            <label>Customer Name *</label>
+            <input type="text" name="customer_name" id="customerName" required>
+
+            <label>Customer Mobile (optional)</label>
+            <input type="tel" name="customer_mobile" id="customerMobile">
+
+            <label>Customer Address</label>
+            <textarea name="customer_address" rows="2"></textarea>
+
+            <button type="submit"><i class="fas fa-print"></i> Generate Invoice & Print</button>
+        </form>
+    </div>
+    <footer>Inventory mode uses barcode/search; Manual mode allows selling items not in database (no stock deduction).</footer>
+</div>
+
+<script>
+    // Global variables
+    let currentProduct = null;
+    let html5QrCode = null;
+    let scanActive = false;
+    let currentMode = 'inventory';
+
+    function toggleBillingMode() {
+        const mode = document.querySelector('input[name="billing_mode"]:checked').value;
+        currentMode = mode;
+        const inventoryDiv = document.getElementById('inventoryMode');
+        const manualDiv = document.getElementById('manualMode');
+        const isManualHidden = document.getElementById('isManualMode');
+        if (mode === 'inventory') {
+            inventoryDiv.classList.remove('hide');
+            manualDiv.classList.add('hide');
+            isManualHidden.value = '0';
+            clearProduct();
+        } else {
+            inventoryDiv.classList.add('hide');
+            manualDiv.classList.remove('hide');
+            isManualHidden.value = '1';
+            if (html5QrCode && scanActive) stopScanner();
+        }
+        calculateTotal();
+    }
+
+    // Inventory mode functions
+    function startBarcodeScan() {
+        if (currentMode !== 'inventory') return;
+        const readerDiv = document.getElementById('qr-reader');
+        readerDiv.style.display = 'block';
+        if (html5QrCode) {
+            html5QrCode.stop().then(() => initScanner()).catch(() => initScanner());
+        } else {
+            initScanner();
+        }
+    }
+
+    function initScanner() {
+        html5QrCode = new Html5Qrcode("qr-reader");
+        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+        html5QrCode.start({ facingMode: "environment" }, config, (decodedText) => {
+            document.getElementById('barcodeInput').value = decodedText;
+            fetchProductByBarcode(decodedText);
+            stopScanner();
+        }, (error) => {});
+        scanActive = true;
+    }
+
+    function stopScanner() {
+        if (html5QrCode && scanActive) {
+            html5QrCode.stop().then(() => {
+                document.getElementById('qr-reader').style.display = 'none';
+                scanActive = false;
+            }).catch(() => {});
+        }
+    }
+
+    function fetchProductByBarcode(barcode) {
+        if (!barcode.trim()) return;
+        fetch(`/admin/product/data/by_barcode?barcode=${encodeURIComponent(barcode)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.id) {
+                    setCurrentProduct(data);
+                    document.getElementById('selectedProductId').value = data.id;
+                    document.getElementById('barcodeInput').value = data.barcode_data || barcode;
+                    document.getElementById('searchProduct').value = data.title;
+                } else {
+                    alert('Product not found with this barcode');
+                    clearProduct();
+                }
+                document.getElementById('searchResults').style.display = 'none';
+            })
+            .catch(err => alert('Error fetching product'));
+    }
+
+    function setCurrentProduct(product) {
+        currentProduct = product;
+        document.getElementById('displayTitle').innerText = product.title;
+        document.getElementById('displayPrice').innerText = product.price;
+        document.getElementById('displayStock').innerText = product.stock_quantity;
+        document.getElementById('productDetails').style.display = 'block';
+        const qtyInput = document.getElementById('quantity');
+        qtyInput.max = product.stock_quantity;
+        if (qtyInput.value > product.stock_quantity) qtyInput.value = product.stock_quantity;
+        calculateTotal();
+    }
+
+    function clearProduct() {
+        currentProduct = null;
+        document.getElementById('productDetails').style.display = 'none';
+        document.getElementById('selectedProductId').value = '';
+        document.getElementById('displayTitle').innerText = '';
+        document.getElementById('displayPrice').innerText = '0';
+        document.getElementById('displayStock').innerText = '0';
+        calculateTotal();
+    }
+
+    // Product search suggestions
+    const searchInput = document.getElementById('searchProduct');
+    const resultsDiv = document.getElementById('searchResults');
+    let debounceTimer;
+
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            if (currentMode !== 'inventory') return;
+            clearTimeout(debounceTimer);
+            const query = this.value.trim();
+            if (query.length < 2) {
+                resultsDiv.style.display = 'none';
+                return;
+            }
+            debounceTimer = setTimeout(() => {
+                fetch(`/admin/product/search?q=${encodeURIComponent(query)}`)
+                    .then(res => res.json())
+                    .then(products => {
+                        if (products.length === 0) {
+                            resultsDiv.style.display = 'none';
+                            return;
+                        }
+                        resultsDiv.innerHTML = '';
+                        products.forEach(p => {
+                            const div = document.createElement('div');
+                            div.innerHTML = `<strong>${p.title}</strong> (₹${p.price}) - Stock: ${p.stock}<br><small>Barcode: ${p.barcode || 'N/A'}</small>`;
+                            div.onclick = () => {
+                                setCurrentProduct(p);
+                                document.getElementById('selectedProductId').value = p.id;
+                                document.getElementById('barcodeInput').value = p.barcode || '';
+                                searchInput.value = p.title;
+                                resultsDiv.style.display = 'none';
+                            };
+                            resultsDiv.appendChild(div);
+                        });
+                        resultsDiv.style.display = 'block';
+                    });
+            }, 300);
+        });
+    }
+
+    document.addEventListener('click', function(e) {
+        if (e.target !== searchInput) resultsDiv.style.display = 'none';
+    });
+
+    // Manual barcode Enter
+    const barcodeInput = document.getElementById('barcodeInput');
+    if (barcodeInput) {
+        barcodeInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const barcode = this.value.trim();
+                if (barcode && currentMode === 'inventory') fetchProductByBarcode(barcode);
+            }
+        });
+    }
+
+    // Quantity, discount calculation
+    const quantityInput = document.getElementById('quantity');
+    const discountType = document.getElementById('discountType');
+    const discountValue = document.getElementById('discountValue');
+
+    function calculateTotal() {
+        if (currentMode === 'inventory') {
+            if (!currentProduct) {
+                document.getElementById('totalAmount').innerText = '0.00';
+                return;
+            }
+            const price = currentProduct.price;
+            const qty = parseInt(quantityInput.value) || 0;
+            const subtotal = price * qty;
+            const discType = discountType.value;
+            let discVal = parseFloat(discountValue.value) || 0;
+            let discAmount = discType === 'percent' ? subtotal * discVal / 100 : discVal;
+            let total = subtotal - discAmount;
+            if (total < 0) total = 0;
+            document.getElementById('totalAmount').innerText = total.toFixed(2);
+        } else {
+            // Manual mode: get price from manual field
+            const price = parseFloat(document.getElementById('manualPrice').value) || 0;
+            const qty = parseInt(quantityInput.value) || 0;
+            const subtotal = price * qty;
+            const discType = discountType.value;
+            let discVal = parseFloat(discountValue.value) || 0;
+            let discAmount = discType === 'percent' ? subtotal * discVal / 100 : discVal;
+            let total = subtotal - discAmount;
+            if (total < 0) total = 0;
+            document.getElementById('totalAmount').innerText = total.toFixed(2);
+        }
+    }
+
+    quantityInput.addEventListener('input', function() {
+        if (currentMode === 'inventory' && currentProduct) {
+            let qty = parseInt(this.value) || 0;
+            if (qty > currentProduct.stock_quantity) {
+                alert(`Only ${currentProduct.stock_quantity} items in stock`);
+                this.value = currentProduct.stock_quantity;
+            }
+        }
+        calculateTotal();
+    });
+    discountType.addEventListener('change', calculateTotal);
+    discountValue.addEventListener('input', calculateTotal);
+
+    const manualPriceInput = document.getElementById('manualPrice');
+    if (manualPriceInput) manualPriceInput.addEventListener('input', calculateTotal);
+
+    // Form validation before submit
+    document.getElementById('billingForm').addEventListener('submit', function(e) {
+        const mode = currentMode;
+        const customerName = document.getElementById('customerName').value.trim();
+        if (!customerName) {
+            alert('Customer Name is required');
+            e.preventDefault();
+            return;
+        }
+        if (mode === 'inventory') {
+            const productId = document.getElementById('selectedProductId').value;
+            if (!productId) {
+                alert('Please select a product (by barcode, scan, or search)');
+                e.preventDefault();
+                return;
+            }
+            const qty = parseInt(quantityInput.value);
+            if (currentProduct && qty > currentProduct.stock_quantity) {
+                alert(`Only ${currentProduct.stock_quantity} items available`);
+                e.preventDefault();
+                return;
+            }
+        } else {
+            const manualName = document.getElementById('manualProductName').value.trim();
+            const manualPrice = parseFloat(document.getElementById('manualPrice').value);
+            if (!manualName || isNaN(manualPrice) || manualPrice <= 0) {
+                alert('Please enter valid product name and price in manual mode');
+                e.preventDefault();
+                return;
+            }
+        }
+    });
+
+    // Stop scanner on unload
+    window.addEventListener('beforeunload', function() {
+        if (html5QrCode && scanActive) html5QrCode.stop();
+    });
+
+    // Initialize mode
+    toggleBillingMode();
+</script>
+</body>
+</html>
